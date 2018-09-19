@@ -1,7 +1,9 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
 import requests
-import re
 import time
+import re
 
 time_interval = 0.05
 domain = 'https://www.ptt.cc'
