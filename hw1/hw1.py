@@ -1,17 +1,21 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from bs4 import BeautifulSoup
-import numpy as np
+from collections import Counter
+from datetime import date
+import bs4
 import requests
 import time
-import csv
 import os
 import cProfile
 import re
 
 
-def crawl():
+def to_date(s):
+    return date(2017, int(s[:-2]), int(s[-2:]))
 
+
+def crawl():
     time_interval = 0.05
     domain = 'https://www.ptt.cc'
     homepage_url = 'https://www.ptt.cc/bbs/Beauty/index.html'
@@ -32,7 +36,7 @@ def crawl():
             print("http request didn't complete, status code is " + str(r.status_code) + '.')
             print("retry after 1 second.")
             time.sleep(1)
-            r = requests.get(url)
+            r = requests.get(url, stream=True)
 
         if r.status_code == 200:
             print("http request completed, URL=" + url)
@@ -92,22 +96,176 @@ def crawl():
         elif bomb_date_list[i] == '1231':
             break
 
-    with open(os.path.abspath('all_articles.txt'), 'w+', encoding='utf-8', newline='') as f:
-        writer = csv.writer(f, delimiter=',', quotechar="'")
+    with open(os.path.abspath('all_articles.txt'), 'w+', encoding='utf-8') as f:
         for i in range(len(title_list)):
-            writer.writerow([date_list[i], title_list[i], url_list[i]])
+            f.write(date_list[i] + ',' + title_list[i] + ',' + url_list[i] + '\n')
 
-    with open(os.path.abspath('all_popular.txt'), 'w+', encoding='utf-8', newline='') as f:
-        writer = csv.writer(f, delimiter=',', quotechar="'")
+    with open(os.path.abspath('all_popular.txt'), 'w+', encoding='utf-8') as f:
         for i in range(len(bomb_title_list)):
-            writer.writerow([bomb_date_list[i], bomb_title_list[i], bomb_url_list[i]])
+            f.write(bomb_date_list[i] + ',' + bomb_title_list[i] + ',' + bomb_url_list[i] + '\n')
 
 
-# def push():
-start_date = '101'
-end_date = '131'
+def push(start ='101', end ='221'):
+    start_date = to_date(start)
+    end_date = to_date(end)
 
-all_articles = np.genfromtxt('all_articles.txt', delimiter=',', encoding='utf-8')
-#
+    time_interval = 0.1
+
+    date_list = []
+    title_list = []
+    url_list = []
+
+    with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
+        for line in f:
+            date_list.append(line.split(',')[0])
+            title_list.append(','.join(part for part in line.split(',')[1:-1]))
+            url_list.append(line.split(',')[-1].replace('\n', ''))
+
+    liker = []
+    booer = []
+
+    for i in range(len(title_list)):
+        if start_date <= to_date(date_list[i]) <= end_date:
+            url = url_list[i]
+            r = requests.get(url, stream=True)
+
+            while r.status_code != 200:
+                print("http request didn't complete, status code is " + str(r.status_code) + '.')
+                print("retry after 1 second.")
+                time.sleep(1)
+                r = requests.get(url, stream=True)
+
+            if r.status_code == 200:
+                print("http request completed, URL=" + url)
+                content = r.text
+                soup = BeautifulSoup(content, 'html.parser')
+                reply_list = soup.find_all('div', {'class': 'push'})
+
+                for reply in reply_list:
+                    reply_id = reply.find('span', {'class': 'f3 hl push-userid'}).text
+                    like_or_boo = None          # True:push ; False:boo
+
+                    if reply.find('span', {'class': 'hl push-tag'}) is not None:
+                        like_or_boo = True
+                    elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
+                        if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
+                            like_or_boo = False
+
+                    if like_or_boo is True:
+                        liker.append(reply_id)
+                    elif like_or_boo is False:
+                        booer.append(reply_id)
+
+        time.sleep(time_interval)
+
+    liker_count = Counter(liker).most_common()
+    booer_count = Counter(booer).most_common()
+    num_of_like = len(liker)
+    num_of_boo = len(booer)
+
+    with open(os.path.abspath('push[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
+        f.write('all like: ' + str(num_of_like) + '\n')
+        f.write('all boo: ' + str(num_of_boo) + '\n')
+        for i in range(10):
+            f.write('like #' + str(i+1) + ': ' + liker_count[i][0] + ' ' + str(liker_count[i][1]) + '\n')
+        for i in range(10):
+            f.write('boo #' + str(i + 1) + ': ' + booer_count[i][0] + ' ' + str(booer_count[i][1]) + '\n')
+
+
+def popular(start='1101', end='1231'):
+    start_date = to_date(start)
+    end_date = to_date(end)
+    bomb_date_list = []
+    bomb_title_list = []
+    bomb_url_list = []
+    img_list = []
+
+    with open(os.path.abspath('all_popular.txt'), 'r+', encoding='utf-8') as f:
+        for line in f:
+            bomb_date_list.append(line.split(',')[0])
+            bomb_title_list.append(','.join(part for part in line.split(',')[1:-1]))
+            bomb_url_list.append(line.split(',')[-1].replace('\n', ''))
+
+    count = 0
+
+    for i in range(len(bomb_title_list)):
+        if start_date <= to_date(bomb_date_list[i]) <= end_date:
+            count += 1
+            url = bomb_url_list[i]
+            r = requests.get(url, stream=True)
+
+            while r.status_code != 200:
+                print("http request didn't complete, status code is " + str(r.status_code) + '.')
+                print("retry after 1 second.")
+                time.sleep(1)
+                r = requests.get(url, stream=True)
+
+            if r.status_code == 200:
+                print("http request completed, URL=" + url)
+                content = r.text
+                img_list += list(
+                    set(re.findall('(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+(?:\.png|\.jpg|\.jpeg|\.gif)',
+                                   content,
+                                   flags=re.IGNORECASE)))
+
+    with open(os.path.abspath('popular[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
+        f.write('number of popular articles: ' + str(count) + '\n')
+        for img in img_list:
+            f.write(img + '\n')
+
+
+# def keyword(start='101', end='221'):
+start = '101'
+end = '221'
+start_date = to_date(start)
+end_date = to_date(end)
+date_list = []
+title_list = []
+url_list = []
+img_list = []
+all_keywords = []
+
+with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
+    for line in f:
+        date_list.append(line.split(',')[0])
+        title_list.append(','.join(part for part in line.split(',')[1:-1]))
+        url_list.append(line.split(',')[-1].replace('\n', ''))
+
+for i in range(len(title_list)):
+    if start_date <= to_date(date_list[i]) <= end_date:
+        url = url_list[i]
+        r = requests.get(url, stream=True)
+
+        while r.status_code != 200:
+            print("http request didn't complete, status code is " + str(r.status_code) + '.')
+            print("retry after 1 second.")
+            time.sleep(1)
+            r = requests.get(url, stream=True)
+
+        if r.status_code == 200:
+            print("http request completed, URL=" + url)
+            content = r.text
+            soup = BeautifulSoup(content, 'html.parser')
+            for part in soup.find_all('div', {'class': 'article-metaline'}):
+                all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
+                all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+            for part in soup.find_all('div', {'class': 'article-metaline-right'}):
+                all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
+                all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+
+            node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
+            last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
+            while node != last_node:
+                if type(node) == bs4.element.NavigableString:
+                    tmp = str(node).split('\n')
+                    while '' in tmp:
+                        tmp.remove('')
+                    all_keywords += tmp
+                elif type(node) == bs4.element.Tag:
+                    if node.text != '':
+                        all_keywords.append(node.text)
+
+                node = node.next_sibling
+
 # if __name__ == '__main__':
-#     scrap()
+#     crawl()
