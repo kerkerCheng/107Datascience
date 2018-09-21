@@ -7,7 +7,7 @@ import bs4
 import requests
 import time
 import os
-import cProfile
+import sys
 import re
 
 time_interval = 0.05
@@ -60,6 +60,14 @@ def crawl():
     bomb_date_list = []
     bomb_title_list = []
     bomb_url_list = []
+    ignore_url_list = ['https://www.ptt.cc/bbs/Beauty/M.1490936972.A.60D.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1494776135.A.50A.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1503194519.A.F4C.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1504936945.A.313.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1505973115.A.732.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1507620395.A.27E.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1510829546.A.D83.html',
+                       'https://www.ptt.cc/bbs/Beauty/M.1512141143.A.D31.html']
 
     flag = False
 
@@ -97,6 +105,9 @@ def crawl():
                     print('title:   ' + art_title)
                     # print('url:   ' + domain + art_url)
                     # print('date:   ' + art_date)
+
+                    if (domain + art_url) in ignore_url_list:
+                        continue
 
                     if art_date == '1/01':
                         flag = True
@@ -140,7 +151,7 @@ def crawl():
             f.write(bomb_date_list[i] + ',' + bomb_title_list[i] + ',' + bomb_url_list[i] + '\n')
 
 
-def push(start='101', end='221'):
+def push(start, end):
     start_date = to_date(start)
     end_date = to_date(end)
 
@@ -197,7 +208,7 @@ def push(start='101', end='221'):
             f.write('boo #' + str(i + 1) + ': ' + booer_count[i][0] + ' ' + str(booer_count[i][1]) + '\n')
 
 
-def popular(start='1101', end='1231'):
+def popular(start, end):
     start_date = to_date(start)
     end_date = to_date(end)
     img_list = []
@@ -233,7 +244,7 @@ def popular(start='1101', end='1231'):
             f.write(img + '\n')
 
 
-def keyword(start='121', end='211', keyword= 'IU'):
+def keyword(start, end, keyword):
     start_date = to_date(start)
     end_date = to_date(end)
     date_list = []
@@ -313,4 +324,18 @@ def keyword(start='121', end='211', keyword= 'IU'):
 
 
 if __name__ == '__main__':
-    keyword()
+    if sys.argv[1] == 'crawl':
+        crawl()
+    elif sys.argv[1] == 'push':
+        start = sys.argv[2]
+        end = sys.argv[3]
+        push(start, end)
+    elif sys.argv[1] == 'popular':
+        start = sys.argv[2]
+        end = sys.argv[3]
+        popular(start, end)
+    elif sys.argv[1] == 'keyword':
+        key = sys.argv[2]
+        start = sys.argv[3]
+        end = sys.argv[4]
+        keyword(start, end, key)
