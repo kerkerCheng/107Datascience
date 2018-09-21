@@ -10,6 +10,8 @@ import os
 import cProfile
 import re
 
+time_interval = 0.05
+
 
 def to_date(s):
     return date(2017, int(s[:-2]), int(s[-2:]))
@@ -29,8 +31,27 @@ def load_text(filename):
     return date_list, title_list, url_list
 
 
+def get_imgs(url):
+    r = requests.get(url, stream=True)
+    img_list = []
+
+    while r.status_code != 200:
+        print("http request didn't complete, status code is " + str(r.status_code) + '.')
+        print("retry after 1 second.")
+        time.sleep(1)
+        r = requests.get(url, stream=True)
+
+    if r.status_code == 200:
+        print("http request completed, URL=" + url)
+        content = r.text
+        img_list += list(
+            set(re.findall('(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+(?:\.png|\.jpg|\.jpeg|\.gif)',
+                           content,
+                           flags=re.IGNORECASE)))
+    return img_list
+
+
 def crawl():
-    time_interval = 0.05
     domain = 'https://www.ptt.cc'
     homepage_url = 'https://www.ptt.cc/bbs/Beauty/index.html'
     date_list = []
@@ -119,11 +140,9 @@ def crawl():
             f.write(bomb_date_list[i] + ',' + bomb_title_list[i] + ',' + bomb_url_list[i] + '\n')
 
 
-def push(start ='101', end ='221'):
+def push(start='101', end='221'):
     start_date = to_date(start)
     end_date = to_date(end)
-
-    time_interval = 0.1
 
     date_list, title_list, url_list = load_text('all_articles.txt')
 
@@ -206,6 +225,7 @@ def popular(start='1101', end='1231'):
                     set(re.findall('(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+(?:\.png|\.jpg|\.jpeg|\.gif)',
                                    content,
                                    flags=re.IGNORECASE)))
+            time.sleep(time_interval)
 
     with open(os.path.abspath('popular[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
         f.write('number of popular articles: ' + str(count) + '\n')
@@ -213,58 +233,84 @@ def popular(start='1101', end='1231'):
             f.write(img + '\n')
 
 
-# def keyword(start='101', end='221'):
-start = '101'
-end = '221'
-start_date = to_date(start)
-end_date = to_date(end)
-date_list = []
-title_list = []
-url_list = []
-img_list = []
-all_keywords = []
+def keyword(start='121', end='211', keyword= 'IU'):
+    start_date = to_date(start)
+    end_date = to_date(end)
+    date_list = []
+    title_list = []
+    url_list = []
+    img_list = []
+    all_keywords = []
+    ans_urls = []
 
-with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
-    for line in f:
-        date_list.append(line.split(',')[0])
-        title_list.append(','.join(part for part in line.split(',')[1:-1]))
-        url_list.append(line.split(',')[-1].replace('\n', ''))
+    with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
+        for line in f:
+            date_list.append(line.split(',')[0])
+            title_list.append(','.join(part for part in line.split(',')[1:-1]))
+            url_list.append(line.split(',')[-1].replace('\n', ''))
 
-for i in range(len(title_list)):
-    if start_date <= to_date(date_list[i]) <= end_date:
-        url = url_list[i]
-        r = requests.get(url, stream=True)
+    print('read file OK!!')
 
-        while r.status_code != 200:
-            print("http request didn't complete, status code is " + str(r.status_code) + '.')
-            print("retry after 1 second.")
-            time.sleep(1)
+    for i in range(len(title_list)):
+        if start_date <= to_date(date_list[i]) <= end_date:
+            url = url_list[i]
             r = requests.get(url, stream=True)
 
-        if r.status_code == 200:
-            print("http request completed, URL=" + url)
-            content = r.text
-            soup = BeautifulSoup(content, 'html.parser')
-            for part in soup.find_all('div', {'class': 'article-metaline'}):
-                all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
-                all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
-            for part in soup.find_all('div', {'class': 'article-metaline-right'}):
-                all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
-                all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+            while r.status_code != 200:
+                print("http request didn't complete, status code is " + str(r.status_code) + '.')
+                print("retry after 1 second.")
+                time.sleep(1)
+                r = requests.get(url, stream=True)
 
-            node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-            last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
-            while node != last_node:
-                if type(node) == bs4.element.NavigableString:
-                    tmp = str(node).split('\n')
-                    while '' in tmp:
-                        tmp.remove('')
-                    all_keywords += tmp
-                elif type(node) == bs4.element.Tag:
-                    if node.text != '':
-                        all_keywords.append(node.text)
+            if r.status_code == 200:
+                print("http request completed, URL=" + url)
+                content = r.text
+                soup = BeautifulSoup(content, 'html.parser')
+                for part in soup.find_all('div', {'class': 'article-metaline'}):
+                    all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+                    all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
+                for part in soup.find_all('div', {'class': 'article-metaline-right'}):
+                    all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+                    all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
 
-                node = node.next_sibling
+                if soup.find_all('div', {'class': 'article-metaline'}) == []:
+                    words = soup.find_all('div', {'id': 'main-content'})[0].text
+                    words = words.split('--※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
+                    words = words.replace('\n', '')
+                    all_keywords.append((words, url))
+                    continue
 
-# if __name__ == '__main__':
-#     crawl()
+                node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
+                last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
+                while node != last_node:
+                    if type(node) == bs4.element.NavigableString:
+                        tmp = str(node).split('\n')
+                        while '' in tmp:
+                            tmp.remove('')
+                        for j in range(len(tmp)):
+                            tmp[j] = (tmp[j], url)
+                        all_keywords += tmp
+                    elif type(node) == bs4.element.Tag:
+                        if node.text != '':
+                            all_keywords.append((node.text, url))
+
+                    node = node.next_sibling
+
+            time.sleep(time_interval)
+
+    for item in all_keywords:
+        if keyword in item[0]:
+            ans_urls.append(item[1])
+
+    ans_urls = list(set(ans_urls))
+
+    for u in ans_urls:
+        img_list += get_imgs(u)
+
+    with open(os.path.abspath('keyword(' + keyword + ')[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
+        for im in img_list:
+            f.write(im + '\n')
+
+
+if __name__ == '__main__':
+    keyword()

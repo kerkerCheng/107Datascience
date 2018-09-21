@@ -231,7 +231,7 @@ with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
         title_list.append(','.join(part for part in line.split(',')[1:-1]))
         url_list.append(line.split(',')[-1].replace('\n', ''))
 
-url = 'https://www.ptt.cc/bbs/Beauty/M.1537012888.A.CDA.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1485164999.A.6A9.html'
 r = requests.get(url, stream=True)
 
 while r.status_code != 200:
@@ -250,6 +250,14 @@ if r.status_code == 200:
     for part in soup.find_all('div', {'class': 'article-metaline-right'}):
         all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
         all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+
+    # if soup.find_all('div', {'class': 'article-metaline'}) == []:
+    #     tmp = []
+    #     words = soup.find_all('div', {'id': 'main-content'})[0].text
+    #     words = words.split('--※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
+    #     words = words.replace('\n', '')
+    #     all_keywords.append(words, url)
+    #     continue
 
     node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
     last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
