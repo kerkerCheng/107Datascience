@@ -15,6 +15,20 @@ def to_date(s):
     return date(2017, int(s[:-2]), int(s[-2:]))
 
 
+def load_text(filename):
+    date_list = []
+    title_list = []
+    url_list = []
+
+    with open(os.path.abspath(filename), 'r+', encoding='utf-8') as f:
+        for line in f:
+            date_list.append(line.split(',')[0])
+            title_list.append(','.join(part for part in line.split(',')[1:-1]))
+            url_list.append(line.split(',')[-1].replace('\n', ''))
+
+    return date_list, title_list, url_list
+
+
 def crawl():
     time_interval = 0.05
     domain = 'https://www.ptt.cc'
@@ -111,15 +125,7 @@ def push(start ='101', end ='221'):
 
     time_interval = 0.1
 
-    date_list = []
-    title_list = []
-    url_list = []
-
-    with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
-        for line in f:
-            date_list.append(line.split(',')[0])
-            title_list.append(','.join(part for part in line.split(',')[1:-1]))
-            url_list.append(line.split(',')[-1].replace('\n', ''))
+    date_list, title_list, url_list = load_text('all_articles.txt')
 
     liker = []
     booer = []
@@ -175,16 +181,9 @@ def push(start ='101', end ='221'):
 def popular(start='1101', end='1231'):
     start_date = to_date(start)
     end_date = to_date(end)
-    bomb_date_list = []
-    bomb_title_list = []
-    bomb_url_list = []
     img_list = []
 
-    with open(os.path.abspath('all_popular.txt'), 'r+', encoding='utf-8') as f:
-        for line in f:
-            bomb_date_list.append(line.split(',')[0])
-            bomb_title_list.append(','.join(part for part in line.split(',')[1:-1]))
-            bomb_url_list.append(line.split(',')[-1].replace('\n', ''))
+    bomb_date_list, bomb_title_list, bomb_url_list = load_text('all_popular.txt')
 
     count = 0
 

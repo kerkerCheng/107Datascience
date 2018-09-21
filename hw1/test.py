@@ -231,7 +231,7 @@ with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
         title_list.append(','.join(part for part in line.split(',')[1:-1]))
         url_list.append(line.split(',')[-1].replace('\n', ''))
 
-url = 'https://www.ptt.cc/bbs/Beauty/M.1485934348.A.F7F.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1537012888.A.CDA.html'
 r = requests.get(url, stream=True)
 
 while r.status_code != 200:
