@@ -192,7 +192,7 @@ def push(start, end):
                     elif like_or_boo is False:
                         booer.append(reply_id)
 
-        time.sleep(time_interval)
+            time.sleep(time_interval)
 
     liker_count = Counter(liker).most_common()
     booer_count = Counter(booer).most_common()
