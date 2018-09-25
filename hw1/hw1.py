@@ -113,7 +113,7 @@ def crawl():
                         flag = True
 
                     if flag is True:
-                        if '[公告]' not in art_title:
+                        if art_title[0:4] != '[公告]':
                             date_list.append(art_date.strip().replace('/', ''))
                             title_list.append(art_title)
                             url_list.append(domain + art_url)
@@ -292,7 +292,7 @@ def keyword(start, end, keyword):
                     continue
 
                 node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-                last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
+                last_node = soup.find_all('span', {'class': 'f2'})[0]
                 while node != last_node:
                     if type(node) == bs4.element.NavigableString:
                         tmp = str(node).split('\n')
@@ -306,6 +306,9 @@ def keyword(start, end, keyword):
                             all_keywords.append((node.text, url))
 
                     node = node.next_sibling
+
+            if all_keywords[-1][0] == '--':
+                all_keywords[:] = all_keywords[:-1]
 
             time.sleep(time_interval)
 

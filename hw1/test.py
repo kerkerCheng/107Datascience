@@ -215,7 +215,7 @@ def popular(start='1101', end='1231'):
 
 
 # def keyword(start='101', end='221'):
-url = 'https://www.ptt.cc/bbs/Beauty/M.1503194519.A.F4C.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1484726019.A.A61.html'
 r = requests.get(url, stream=True)
 all_keywords = []
 
@@ -241,23 +241,26 @@ if r.status_code == 200:
         words = words.split('--\n※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
         words = words.replace('\n', '')
         all_keywords.append((words, url))
-    #
-    #
-    # node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-    # last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
-    # while node != last_node:
-    #     if type(node) == bs4.element.NavigableString:
-    #         tmp = str(node).split('\n')
-    #         while '' in tmp:
-    #             tmp.remove('')
-    #         for j in range(len(tmp)):
-    #             tmp[j] = (tmp[j], url)
-    #         all_keywords += tmp
-    #     elif type(node) == bs4.element.Tag:
-    #         if node.text != '':
-    #             all_keywords.append((node.text, url))
-    #
-    #     node = node.next_sibling
+
+
+    node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
+    last_node = soup.find_all('span', {'class': 'f2'})[0]
+    while node != last_node:
+        if type(node) == bs4.element.NavigableString:
+            tmp = str(node).split('\n')
+            while '' in tmp:
+                tmp.remove('')
+            for j in range(len(tmp)):
+                tmp[j] = (tmp[j], url)
+            all_keywords += tmp
+        elif type(node) == bs4.element.Tag:
+            if node.text != '':
+                all_keywords.append((node.text, url))
+
+        node = node.next_sibling
+
+if all_keywords[-1][0] == '--':
+    all_keywords[:] = all_keywords[:-1]
 
 
 # if __name__ == '__main__':
