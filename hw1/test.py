@@ -215,24 +215,9 @@ def popular(start='1101', end='1231'):
 
 
 # def keyword(start='101', end='221'):
-start = '101'
-end = '221'
-start_date = to_date(start)
-end_date = to_date(end)
-date_list = []
-title_list = []
-url_list = []
-img_list = []
-all_keywords = []
-
-with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
-    for line in f:
-        date_list.append(line.split(',')[0])
-        title_list.append(','.join(part for part in line.split(',')[1:-1]))
-        url_list.append(line.split(',')[-1].replace('\n', ''))
-
-url = 'https://www.ptt.cc/bbs/Beauty/M.1485164999.A.6A9.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1503194519.A.F4C.html'
 r = requests.get(url, stream=True)
+all_keywords = []
 
 while r.status_code != 200:
     print("http request didn't complete, status code is " + str(r.status_code) + '.')
@@ -245,33 +230,35 @@ if r.status_code == 200:
     content = r.text
     soup = BeautifulSoup(content, 'html.parser')
     for part in soup.find_all('div', {'class': 'article-metaline'}):
-        all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
-        all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+        all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+        all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
     for part in soup.find_all('div', {'class': 'article-metaline-right'}):
-        all_keywords.append(part.find_all('span', {'class': 'article-meta-tag'})[0].text)
-        all_keywords.append(part.find_all('span', {'class': 'article-meta-value'})[0].text)
+        all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+        all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
 
-    # if soup.find_all('div', {'class': 'article-metaline'}) == []:
-    #     tmp = []
-    #     words = soup.find_all('div', {'id': 'main-content'})[0].text
-    #     words = words.split('--※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
-    #     words = words.replace('\n', '')
-    #     all_keywords.append(words, url)
-    #     continue
+    if soup.find_all('div', {'class': 'article-metaline'}) == []:
+        words = soup.find_all('div', {'id': 'main-content'})[0].text
+        words = words.split('--\n※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
+        words = words.replace('\n', '')
+        all_keywords.append((words, url))
+    #
+    #
+    # node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
+    # last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
+    # while node != last_node:
+    #     if type(node) == bs4.element.NavigableString:
+    #         tmp = str(node).split('\n')
+    #         while '' in tmp:
+    #             tmp.remove('')
+    #         for j in range(len(tmp)):
+    #             tmp[j] = (tmp[j], url)
+    #         all_keywords += tmp
+    #     elif type(node) == bs4.element.Tag:
+    #         if node.text != '':
+    #             all_keywords.append((node.text, url))
+    #
+    #     node = node.next_sibling
 
-    node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-    last_node = soup.find_all('span', {'class': 'f2'})[0].previous_sibling
-    while node != last_node:
-        if type(node) == bs4.element.NavigableString:
-            tmp = str(node).split('\n')
-            while '' in tmp:
-                tmp.remove('')
-            all_keywords += tmp
-        elif type(node) == bs4.element.Tag:
-            if node.text != '':
-                all_keywords.append(node.text)
-
-        node = node.next_sibling
 
 # if __name__ == '__main__':
 #     crawl()

@@ -286,7 +286,7 @@ def keyword(start, end, keyword):
 
                 if soup.find_all('div', {'class': 'article-metaline'}) == []:
                     words = soup.find_all('div', {'id': 'main-content'})[0].text
-                    words = words.split('--※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
+                    words = words.split('--\n※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
                     words = words.replace('\n', '')
                     all_keywords.append((words, url))
                     continue
