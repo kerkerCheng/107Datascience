@@ -194,8 +194,8 @@ def push(start, end):
 
             time.sleep(time_interval)
 
-    liker_count = Counter(liker).most_common()
-    booer_count = Counter(booer).most_common()
+    liker_count = sorted(Counter(liker).items(), key= lambda t: (-t[1], t[0]), reverse=False)
+    booer_count = sorted(Counter(booer).items(), key= lambda t: (-t[1], t[0]), reverse=False)
     num_of_like = len(liker)
     num_of_boo = len(booer)
 
