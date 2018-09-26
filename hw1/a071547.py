@@ -44,10 +44,14 @@ def get_imgs(url):
     if r.status_code == 200:
         print("http request completed, URL=" + url)
         content = r.text
-        img_list += list(
-            set(re.findall('(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+(?:\.png|\.jpg|\.jpeg|\.gif)',
-                           content,
-                           flags=re.IGNORECASE)))
+        soup = BeautifulSoup(content, 'html.parser')
+
+        for url in soup.find_all('a'):
+            if '(' not in url.text[-4:] and ')' not in url.text[-4:]:
+                if bool(re.search(url.text[-4:], '\.png|\.jpg|\.jpeg|\.gif', flags=re.IGNORECASE)):
+                    if url.text != '':
+                        img_list.append(url.text)
+
     return img_list
 
 
@@ -194,8 +198,8 @@ def push(start, end):
 
             time.sleep(time_interval)
 
-    liker_count = sorted(Counter(liker).items(), key= lambda t: (-t[1], t[0]), reverse=False)
-    booer_count = sorted(Counter(booer).items(), key= lambda t: (-t[1], t[0]), reverse=False)
+    liker_count = sorted(Counter(liker).items(), key=lambda t: (-t[1], t[0]), reverse=False)
+    booer_count = sorted(Counter(booer).items(), key=lambda t: (-t[1], t[0]), reverse=False)
     num_of_like = len(liker)
     num_of_boo = len(booer)
 
@@ -221,21 +225,7 @@ def popular(start, end):
         if start_date <= to_date(bomb_date_list[i]) <= end_date:
             count += 1
             url = bomb_url_list[i]
-            r = requests.get(url, stream=True)
-
-            while r.status_code != 200:
-                print("http request didn't complete, status code is " + str(r.status_code) + '.')
-                print("retry after 1 second.")
-                time.sleep(1)
-                r = requests.get(url, stream=True)
-
-            if r.status_code == 200:
-                print("http request completed, URL=" + url)
-                content = r.text
-                img_list += list(
-                    set(re.findall('(?:(?:https?|ftp):\/\/)?[\w/\-?=%.]+\.[\w/\-?=%.]+(?:\.png|\.jpg|\.jpeg|\.gif)',
-                                   content,
-                                   flags=re.IGNORECASE)))
+            img_list += get_imgs(url)
             time.sleep(time_interval)
 
     with open(os.path.abspath('popular[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
@@ -317,6 +307,8 @@ def keyword(start, end, keyword):
             ans_urls.append(item[1])
 
     ans_urls = list(set(ans_urls))
+
+    print('Start to crawl images!!')
 
     for u in ans_urls:
         img_list += get_imgs(u)
