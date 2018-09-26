@@ -182,19 +182,20 @@ def push(start, end):
                 reply_list = soup.find_all('div', {'class': 'push'})
 
                 for reply in reply_list:
-                    reply_id = reply.find('span', {'class': 'f3 hl push-userid'}).text
-                    like_or_boo = None          # True:push ; False:boo
+                    if reply.find('span', {'class': 'f3 hl push-userid'}) is not None:
+                        reply_id = reply.find('span', {'class': 'f3 hl push-userid'}).text
+                        like_or_boo = None          # True:push ; False:boo
 
-                    if reply.find('span', {'class': 'hl push-tag'}) is not None:
-                        like_or_boo = True
-                    elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
-                        if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
-                            like_or_boo = False
+                        if reply.find('span', {'class': 'hl push-tag'}) is not None:
+                            like_or_boo = True
+                        elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
+                            if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
+                                like_or_boo = False
 
-                    if like_or_boo is True:
-                        liker.append(reply_id)
-                    elif like_or_boo is False:
-                        booer.append(reply_id)
+                        if like_or_boo is True:
+                            liker.append(reply_id)
+                        elif like_or_boo is False:
+                            booer.append(reply_id)
 
             time.sleep(time_interval)
 

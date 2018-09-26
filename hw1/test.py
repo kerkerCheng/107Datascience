@@ -105,71 +105,67 @@ def crawl():
             f.write(bomb_date_list[i] + ',' + bomb_title_list[i] + ',' + bomb_url_list[i] + '\n')
 
 
-def push(start ='101', end ='221'):
-    start_date = to_date(start)
-    end_date = to_date(end)
+# def push(start ='101', end ='221'):
 
-    time_interval = 0.1
+time_interval = 0.1
 
-    date_list = []
-    title_list = []
-    url_list = []
+date_list = []
+title_list = []
+url_list = []
 
-    with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
-        for line in f:
-            date_list.append(line.split(',')[0])
-            title_list.append(','.join(part for part in line.split(',')[1:-1]))
-            url_list.append(line.split(',')[-1].replace('\n', ''))
+with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
+    for line in f:
+        date_list.append(line.split(',')[0])
+        title_list.append(','.join(part for part in line.split(',')[1:-1]))
+        url_list.append(line.split(',')[-1].replace('\n', ''))
 
-    liker = []
-    booer = []
+liker = []
+booer = []
 
-    for i in range(len(title_list)):
-        if start_date <= to_date(date_list[i]) <= end_date:
-            url = url_list[i]
-            r = requests.get(url, stream=True)
+url = 'https://www.ptt.cc/bbs/Beauty/M.1492519470.A.B6E.html'
+r = requests.get(url, stream=True)
 
-            while r.status_code != 200:
-                print("http request didn't complete, status code is " + str(r.status_code) + '.')
-                print("retry after 1 second.")
-                time.sleep(1)
-                r = requests.get(url, stream=True)
+while r.status_code != 200:
+    print("http request didn't complete, status code is " + str(r.status_code) + '.')
+    print("retry after 1 second.")
+    time.sleep(1)
+    r = requests.get(url, stream=True)
 
-            if r.status_code == 200:
-                print("http request completed, URL=" + url)
-                content = r.text
-                soup = BeautifulSoup(content, 'html.parser')
-                reply_list = soup.find_all('div', {'class': 'push'})
+if r.status_code == 200:
+    print("http request completed, URL=" + url)
+    content = r.text
+    soup = BeautifulSoup(content, 'html.parser')
+    reply_list = soup.find_all('div', {'class': 'push'})
 
-                for reply in reply_list:
-                    reply_id = reply.find('span', {'class': 'f3 hl push-userid'}).text
-                    like_or_boo = None          # True:push ; False:boo
+    for reply in reply_list:
+        if reply.find('span', {'class': 'f3 hl push-userid'}) is not None:
+            reply_id = reply.find('span', {'class': 'f3 hl push-userid'}).text
+            like_or_boo = None          # True:push ; False:boo
 
-                    if reply.find('span', {'class': 'hl push-tag'}) is not None:
-                        like_or_boo = True
-                    elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
-                        if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
-                            like_or_boo = False
+            if reply.find('span', {'class': 'hl push-tag'}) is not None:
+                like_or_boo = True
+            elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
+                if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
+                    like_or_boo = False
 
-                    if like_or_boo is True:
-                        liker.append(reply_id)
-                    elif like_or_boo is False:
-                        booer.append(reply_id)
+            if like_or_boo is True:
+                liker.append(reply_id)
+            elif like_or_boo is False:
+                booer.append(reply_id)
 
-        time.sleep(time_interval)
 
-    liker_count = Counter(liker).most_common()
-    booer_count = Counter(booer).most_common()
-    num_of_like = len(liker)
-    num_of_boo = len(booer)
-
-    with open(os.path.abspath('push[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
-        f.write('all like: ' + str(num_of_like) + '\n')
-        f.write('all boo: ' + str(num_of_boo) + '\n')
-        for i in range(10):
-            f.write('like #' + str(i+1) + ': ' + liker_count[i][0] + ' ' + str(liker_count[i][1]) + '\n')
-        for i in range(10):
-            f.write('boo #' + str(i + 1) + ': ' + booer_count[i][0] + ' ' + str(booer_count[i][1]) + '\n')
+# liker_count = Counter(liker).most_common()
+# booer_count = Counter(booer).most_common()
+# num_of_like = len(liker)
+# num_of_boo = len(booer)
+#
+# with open(os.path.abspath('push[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
+#     f.write('all like: ' + str(num_of_like) + '\n')
+#     f.write('all boo: ' + str(num_of_boo) + '\n')
+#     for i in range(10):
+#         f.write('like #' + str(i+1) + ': ' + liker_count[i][0] + ' ' + str(liker_count[i][1]) + '\n')
+#     for i in range(10):
+#         f.write('boo #' + str(i + 1) + ': ' + booer_count[i][0] + ' ' + str(booer_count[i][1]) + '\n')
 
 
 def popular(start='1101', end='1231'):
@@ -263,25 +259,26 @@ def keyword(start='101', end='221'):
         all_keywords[:] = all_keywords[:-1]
 
 
-url = 'https://www.ptt.cc/bbs/Beauty/M.1485189164.A.704.html'
-r = requests.get(url, stream=True)
-img_list = []
-
-while r.status_code != 200:
-    print("http request didn't complete, status code is " + str(r.status_code) + '.')
-    print("retry after 1 second.")
-    time.sleep(1)
+def qqq():
+    url = 'https://www.ptt.cc/bbs/Beauty/M.1485189164.A.704.html'
     r = requests.get(url, stream=True)
+    img_list = []
 
-if r.status_code == 200:
-    print("http request completed, URL=" + url)
-    content = r.text
-    soup = BeautifulSoup(content, 'html.parser')
+    while r.status_code != 200:
+        print("http request didn't complete, status code is " + str(r.status_code) + '.')
+        print("retry after 1 second.")
+        time.sleep(1)
+        r = requests.get(url, stream=True)
 
-    for url in soup.find_all('a'):
-        if bool(re.search(url.text[-4:], '\.png|\.jpg|\.jpeg|\.gif', flags=re.IGNORECASE)):
-            if url.text != '':
-                img_list.append(url.text)
+    if r.status_code == 200:
+        print("http request completed, URL=" + url)
+        content = r.text
+        soup = BeautifulSoup(content, 'html.parser')
+
+        for url in soup.find_all('a'):
+            if bool(re.search(url.text[-4:], '\.png|\.jpg|\.jpeg|\.gif', flags=re.IGNORECASE)):
+                if url.text != '':
+                    img_list.append(url.text)
 
 # if __name__ == '__main__':
 #     crawl()
