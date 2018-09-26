@@ -122,7 +122,7 @@ with open(os.path.abspath('all_articles.txt'), 'r+', encoding='utf-8') as f:
 liker = []
 booer = []
 
-url = 'https://www.ptt.cc/bbs/Beauty/M.1492519470.A.B6E.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1537884350.A.DEF.html'
 r = requests.get(url, stream=True)
 
 while r.status_code != 200:
@@ -143,6 +143,7 @@ if r.status_code == 200:
             like_or_boo = None          # True:push ; False:boo
 
             if reply.find('span', {'class': 'hl push-tag'}) is not None:
+                print(reply.find('span', {'class': 'hl push-tag'}))
                 like_or_boo = True
             elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
                 if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':

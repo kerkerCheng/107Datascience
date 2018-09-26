@@ -187,7 +187,8 @@ def push(start, end):
                         like_or_boo = None          # True:push ; False:boo
 
                         if reply.find('span', {'class': 'hl push-tag'}) is not None:
-                            like_or_boo = True
+                            if reply.find('span', {'class': 'hl push-tag'}).text.strip() == '推':
+                                like_or_boo = True
                         elif reply.find('span', {'class': 'f1 hl push-tag'}) is not None:
                             if reply.find('span',  {'class': 'f1 hl push-tag'}).text.strip() == '噓':
                                 like_or_boo = False
@@ -320,6 +321,9 @@ def keyword(start, end, keyword):
 
 
 if __name__ == '__main__':
+
+    start_time = time.time()
+
     if sys.argv[1] == 'crawl':
         crawl()
     elif sys.argv[1] == 'push':
@@ -335,3 +339,7 @@ if __name__ == '__main__':
         start = sys.argv[3]
         end = sys.argv[4]
         keyword(start, end, key)
+
+    end_time = time.time()
+    run_time = end_time-start_time
+    print('The program runtime is ' + str(run_time) + ' seconds.')
