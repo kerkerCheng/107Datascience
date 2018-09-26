@@ -214,10 +214,58 @@ def popular(start='1101', end='1231'):
             f.write(img + '\n')
 
 
-# def keyword(start='101', end='221'):
-url = 'https://www.ptt.cc/bbs/Beauty/M.1484726019.A.A61.html'
+def keyword(start='101', end='221'):
+    url = 'https://www.ptt.cc/bbs/Beauty/M.1483533022.A.C54.html'
+    r = requests.get(url, stream=True)
+    all_keywords = []
+
+    while r.status_code != 200:
+        print("http request didn't complete, status code is " + str(r.status_code) + '.')
+        print("retry after 1 second.")
+        time.sleep(1)
+        r = requests.get(url, stream=True)
+
+    if r.status_code == 200:
+        print("http request completed, URL=" + url)
+        content = r.text
+        soup = BeautifulSoup(content, 'html.parser')
+        for part in soup.find_all('div', {'class': 'article-metaline'}):
+            all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+            all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
+        for part in soup.find_all('div', {'class': 'article-metaline-right'}):
+            all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
+            all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
+
+        if soup.find_all('div', {'class': 'article-metaline'}) == []:
+            words = soup.find_all('div', {'id': 'main-content'})[0].text
+            words = words.split('--\n※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
+            words = words.replace('\n', '')
+            all_keywords.append((words, url))
+
+
+        node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
+        last_node = soup.find_all('span', {'class': 'f2'})[0]
+        while node != last_node:
+            if type(node) == bs4.element.NavigableString:
+                tmp = str(node).split('\n')
+                while '' in tmp:
+                    tmp.remove('')
+                for j in range(len(tmp)):
+                    tmp[j] = (tmp[j], url)
+                all_keywords += tmp
+            elif type(node) == bs4.element.Tag:
+                if node.text != '':
+                    all_keywords.append((node.text, url))
+
+            node = node.next_sibling
+
+    if all_keywords[-1][0] == '--':
+        all_keywords[:] = all_keywords[:-1]
+
+
+url = 'https://www.ptt.cc/bbs/Beauty/M.1485189164.A.704.html'
 r = requests.get(url, stream=True)
-all_keywords = []
+img_list = []
 
 while r.status_code != 200:
     print("http request didn't complete, status code is " + str(r.status_code) + '.')
@@ -229,39 +277,11 @@ if r.status_code == 200:
     print("http request completed, URL=" + url)
     content = r.text
     soup = BeautifulSoup(content, 'html.parser')
-    for part in soup.find_all('div', {'class': 'article-metaline'}):
-        all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
-        all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
-    for part in soup.find_all('div', {'class': 'article-metaline-right'}):
-        all_keywords.append((part.find_all('span', {'class': 'article-meta-tag'})[0].text, url))
-        all_keywords.append((part.find_all('span', {'class': 'article-meta-value'})[0].text, url))
 
-    if soup.find_all('div', {'class': 'article-metaline'}) == []:
-        words = soup.find_all('div', {'id': 'main-content'})[0].text
-        words = words.split('--\n※ 發信站: 批踢踢實業坊(ptt.cc)')[0]
-        words = words.replace('\n', '')
-        all_keywords.append((words, url))
-
-
-    node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-    last_node = soup.find_all('span', {'class': 'f2'})[0]
-    while node != last_node:
-        if type(node) == bs4.element.NavigableString:
-            tmp = str(node).split('\n')
-            while '' in tmp:
-                tmp.remove('')
-            for j in range(len(tmp)):
-                tmp[j] = (tmp[j], url)
-            all_keywords += tmp
-        elif type(node) == bs4.element.Tag:
-            if node.text != '':
-                all_keywords.append((node.text, url))
-
-        node = node.next_sibling
-
-if all_keywords[-1][0] == '--':
-    all_keywords[:] = all_keywords[:-1]
-
+    for url in soup.find_all('a'):
+        if bool(re.search(url.text[-4:], '\.png|\.jpg|\.jpeg|\.gif', flags=re.IGNORECASE)):
+            if url.text != '':
+                img_list.append(url.text)
 
 # if __name__ == '__main__':
 #     crawl()
