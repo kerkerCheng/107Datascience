@@ -75,7 +75,7 @@ def crawl():
 
     flag = False
 
-    for i in range(1992, 2342):
+    for i in range(1992, 2341):
         url = 'https://www.ptt.cc/bbs/Beauty/index' + str(i) + '.html'
         r = requests.get(url, stream=True)
 
