@@ -211,7 +211,7 @@ def popular(start='1101', end='1231'):
             f.write(img + '\n')
 
 
-url = 'https://www.ptt.cc/bbs/Beauty/M.1483533022.A.C54.html'
+url = 'https://www.ptt.cc/bbs/Beauty/M.1499908411.A.66C.html'
 r = requests.get(url, stream=True)
 all_keywords = []
 
@@ -238,9 +238,13 @@ if r.status_code == 200:
         words = words.replace('\n', '')
         all_keywords.append((words, url))
 
-
     node = soup.find_all('div', {'class': 'article-metaline'})[-1].next_sibling
-    last_node = soup.find_all('span', {'class': 'f2'})[0]
+    last_node = None
+
+    for n in soup.find_all('span', {'class': 'f2'}):
+        if '※ 發信站: 批踢踢實業坊(ptt.cc)' in n.text:
+            last_node = n
+
     while node != last_node:
         if type(node) == bs4.element.NavigableString:
             tmp = str(node).split('\n')
@@ -252,6 +256,9 @@ if r.status_code == 200:
         elif type(node) == bs4.element.Tag:
             if node.text != '':
                 all_keywords.append((node.text, url))
+
+        if node is None:
+            break
 
         node = node.next_sibling
 
