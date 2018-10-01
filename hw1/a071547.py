@@ -318,8 +318,9 @@ def keyword(start, end, keyword):
 
     print('Start to crawl images!!')
 
-    for u in ans_urls:
-        img_list += get_imgs(u)
+    for u in url_list:
+        if u in ans_urls:
+            img_list += get_imgs(u)
 
     with open(os.path.abspath('keyword(' + keyword + ')[' + start + '-' + end + '].txt'), 'w+', encoding='utf-8') as f:
         for im in img_list:
