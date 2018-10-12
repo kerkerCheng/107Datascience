@@ -6,12 +6,32 @@
 #include <utility>
 #include <algorithm>
 #include <map>
+#include <queue>
 #include "fp_tree.hpp"
 #define MAX_FREQ	1000000
 
 using namespace std;
 
-int min_sup = 200;
+int min_sup = 500;
+
+struct Comp{
+    bool operator()(const pair<vector<int>, int>& a, const pair<vector<int>, int>& b){
+        if(a.first.size() > b.first.size())
+        	return true;
+        else if(a.first.size() < b.first.size())
+        	return false;
+        else
+        {
+        	for(int i=0; i<a.first.size(); i++)
+        	{
+        		if((a.first)[i] > (b.first)[i])
+        			return true;
+        	}
+        }
+        return false;
+    }
+};
+
 
 void print_trans(vector< vector<int> >& trans);
 void print_pairs(vector< pair<int, int> >& one_item_set);
@@ -21,7 +41,31 @@ void print_cond_pattern(vector<pair<vector<int>, int> >& cond_pat);
 void get_cond_pattern(vector<pair<vector<int>, int> >& cond_pat, int target, Tree *tr);
 void build_cond_pat_trans(vector<pair<vector<int>, int> >& cond_pat, vector<vector<int> >& trans, vector< pair<int, int> >& one_item_set);
 void build_cond_fptr_retransaction(int tag, Tree *tr, vector< vector<int> > &re_transactions);
-void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, vector<pair<vector<int>, int> >& freq_items, vector<int>& prefix);
+void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items, vector<int>& prefix);
+void print_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items);
+void cond_pat_cleaning(vector<pair<vector<int>, int> >& cond_pat, vector< pair<int, int> >& one_item_set, int min_sup);
+void output_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items, string output_path);
+
+struct MatchTag
+{
+	 MatchTag(const int& i) : i_(i) {}
+	 bool operator()(const Node* obj)
+	 {
+	   return (obj->_tag) == i_;
+	 }
+   int i_;
+};
+
+struct MatchPairFirst
+{
+	 MatchPairFirst(const int& i) : i_(i) {}
+	 bool operator()(const pair<int, int>& obj) const
+	 {
+	   return obj.first == i_;
+	 }
+ private:
+   const int i_;
+};
 
 
 Node::Node(int tag)
@@ -76,14 +120,59 @@ Tree::Tree(vector< vector<int> >& trans)
 	}
 }
 
-
-int main(void)
+Tree::Tree(vector<pair<vector<int>, int> >& cond_pat)
 {
+	root = new Node();
+
+	for(vector<pair<vector<int>, int> >::iterator it1 = cond_pat.begin(); it1 != cond_pat.end(); it1++)
+	{
+		Node *current = root;
+		for(vector<int>::iterator it2 = it1->first.begin(); it2 != it1->first.end(); it2++)
+		{
+			bool if_find = false;
+			if(!(current->children).empty())
+			{
+				for(vector<Node *>::iterator itf = (current->children).begin(); itf != (current->children).end(); itf++)		
+				{
+					if((*itf)->_tag == *it2)
+					{
+						if_find = true;
+						(*itf)->_freq += it1->second;
+						current = *itf;
+						break;
+					}
+				}
+			}
+			if(!if_find)
+			{
+				(current->children).push_back(new Node());
+				((current->children).back())->_tag = *it2;
+				((current->children).back())->_freq = it1->second;
+				((current->children).back())->parent = current;
+				current = (current->children).back();
+
+				//Header table construction
+				header_table[*it2].push_back(current);
+			}
+		}
+	}
+}
+
+
+int main(int argc, char *argv[])
+{
+	string input_file = argv[2];
+	string output_path = argv[3];
+	min_sup = atoi(argv[1]);
+
+	cout << "output_file_path : " << output_path << endl;
+	cout << "min_sup : " << min_sup << endl;
+
 	//redirect stdin to 1.in file
-	freopen("sample2.in", "r", stdin);
+	freopen(input_file.c_str(), "r", stdin);
 	vector< vector<int> > transactions;
 	vector< pair<int, int> > one_item_set(1000);
-	string line;
+	string line;	
 
 	//Initialize the one_item_set vector
 	for(int i=0; i<1000; i++)
@@ -144,11 +233,11 @@ int main(void)
 	// print_cond_pattern(cond_pat);
 
 	//Mining FP-tree
-	vector<pair<vector<int>, int> > freq_items;
+	// vector<pair<vector<int>, int> > freq_items;
+	priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp> freq_items;
 	vector<int> prefix;
 	tree_mining(&fp, one_item_set, freq_items, prefix);
-
-
+	output_freq_sets(freq_items, output_path);
 
 	return 0;
 }
@@ -293,44 +382,126 @@ void build_cond_fptr_retransaction(int tag, Tree *tr, vector< vector<int> > &re_
 	}
 }
 
-void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, vector<pair<vector<int>, int> >& freq_items, vector<int>& prefix)
+void cond_pat_cleaning(vector<pair<vector<int>, int> >& cond_pat, vector< pair<int, int> >& one_item_set, int min_sup)
+{
+	one_item_set.resize(1000);
+	for(int i=0; i<1000; i++)
+	{
+		one_item_set[i].first = 0;
+		one_item_set[i].second = i;
+	}
+
+	for(vector<pair<vector<int>, int> >::iterator it = cond_pat.begin(); it != cond_pat.end(); it++)
+	{
+		for(vector<int>::iterator it2 = it->first.begin(); it2 != it->first.end(); it2++)
+			one_item_set.at(*it2).first += it->second;
+	}
+	
+	sort(one_item_set.begin(), one_item_set.end());
+	reverse(one_item_set.begin(), one_item_set.end());
+
+	//Erase items that lower than min_sup
+	for(int i=0; i<one_item_set.size(); i++)
+	{
+		if((one_item_set[i]).first < min_sup)
+		{
+			one_item_set.erase(one_item_set.begin()+i, one_item_set.end());
+			break;
+		}
+	}
+
+	vector<pair<vector<int>, int> > new_cond_pat;
+
+
+	for(vector<pair<vector<int>, int> >::iterator it = cond_pat.begin(); it != cond_pat.end(); it++)
+	{
+		vector<int> tmp;
+		for(vector<int>::iterator it2 = it->first.begin(); it2 != it->first.end(); it2++)
+		{
+			for(vector< pair<int, int> >::iterator it3 = one_item_set.begin(); it3 != one_item_set.end(); it3++)
+			{
+				if(it3->second == *it2)
+				{
+					tmp.push_back(*it2);
+					break;
+				}
+			}
+		}
+
+		new_cond_pat.push_back(make_pair(tmp, it->second));
+	}
+
+	cond_pat = new_cond_pat;
+}
+
+void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items, vector<int>& prefix)
 {
 	for(vector< pair<int, int> >::reverse_iterator it1 = one_item_set.rbegin(); it1 != one_item_set.rend(); it1++)
 	{
 		vector<int> new_set(prefix);
 		new_set.push_back(it1->second);
 
-		vector< vector<int> > re_transactions;
-		vector< pair<int, int> > one_item_set_ss;
-		build_cond_fptr_retransaction(it1->second, tr, re_transactions, one_item_set_ss);
+		// vector< vector<int> > re_transactions;
+		vector< pair<int, int> > new_one_item_set;
+		vector<pair<vector<int>, int> > cond_pat;
 
+		get_cond_pattern(cond_pat, it1->second, tr);
+		cond_pat_cleaning(cond_pat, new_one_item_set, min_sup);
+		Tree t = Tree(cond_pat);
+
+
+		// build_cond_fptr_retransaction(it1->second, tr, re_transactions, one_item_set_ss);
 		// print_pairs(one_item_set_ss);
+		// Tree t = Tree(re_transactions);
 
-		Tree t = Tree(re_transactions);
-		freq_items.push_back(make_pair(new_set, it1->first));
+		sort(new_set.begin(), new_set.end());
+		freq_items.push(make_pair(new_set, it1->first));
 
-		for(vector<int>::iterator it3 = new_set.begin(); it3 != new_set.end(); it3++)
-			cout << *it3 << ",";
-		cout << "次數: " << it1->first << endl;
+		// for(vector<int>::iterator it3 = new_set.begin(); it3 != new_set.end(); it3++)
+		// 	cout << *it3 << ",";
+		// cout << "次數: " << it1->first << endl;
 
 		if(((t.root)->children).size() != 0)
-			tree_mining(&t, one_item_set_ss, freq_items, new_set);
+			tree_mining(&t, new_one_item_set, freq_items, new_set);
 		
 	}
 }
 
-void print_freq_sets(vector<pair<vector<int>, int> >& freq_items)
+void print_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items)
 {
-	for(vector<pair<vector<int>, int> >::iterator it = freq_items.begin(); it != freq_items.end(); it++)
+	while(!freq_items.empty())
 	{
-		for(vector<int>::iterator it2 = (it->first).begin(); it2 != (it->first).end(); it2++)
+		pair<vector<int>, int> pp= freq_items.top();
+		for(vector<int>::iterator it = pp.first.begin(); it != pp.first.end(); it++)
 		{
-			if(it2 != (it->first).end()-1)
-				cout << *it2 << ",";
+			if(it != pp.first.end()-1)
+				cout << *it << ",";
 			else
-				cout << *it2;
+				cout << *it;
 		}
+		cout << ":" << freq_items.top().second << endl;
 
-		cout << "    : " << it->second << endl;
+		freq_items.pop();
+	}
+}
+
+void output_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp>& freq_items, string output_path)
+{
+	FILE *p;
+	p = fopen(output_path.c_str(), "w+");
+
+	while(!freq_items.empty())
+	{
+		pair<vector<int>, int> pp= freq_items.top();
+		for(vector<int>::iterator it = pp.first.begin(); it != pp.first.end(); it++)
+		{
+			if(it != pp.first.end()-1)
+				fprintf(p, "%d,", *it);
+			else
+				fprintf(p, "%d", *it);
+		}
+		fprintf(p, ":%d\n", freq_items.top().second);
+
+		freq_items.pop();
 	}
 }

@@ -28,5 +28,6 @@ public:
 	Node* root;
 	std::map<int, std::vector<Node *> > header_table;
 	Tree(std::vector< std::vector<int> >&);
+	Tree(std::vector< std::pair< std::vector<int>, int> >&);
 
 };
