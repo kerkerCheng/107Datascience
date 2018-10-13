@@ -14,7 +14,9 @@
 using namespace std;
 
 int min_sup;
-double num_of_trans;
+int num_of_trans;
+double min_sup_d;
+double num_of_trans_d;
 
 struct Comp{
     bool operator()(const pair<vector<int>, int>& a, const pair<vector<int>, int>& b){
@@ -167,10 +169,10 @@ int main(int argc, char *argv[])
 {
 	string input_file = argv[2];
 	string output_path = argv[3];
-	min_sup = atoi(argv[1]);
+	min_sup_d = atof(argv[1]);
 
 	cout << "output_file_path : " << output_path << endl;
-	cout << "min_sup : " << min_sup << endl;
+	cout << "min_sup_d : " << min_sup_d << endl;
 
 	//redirect stdin to 1.in file
 	freopen(input_file.c_str(), "r", stdin);
@@ -199,7 +201,10 @@ int main(int argc, char *argv[])
 	}
 
 	//Get 1-item ordered set
-	num_of_trans = (double)transactions.size();
+	num_of_trans = transactions.size();
+	num_of_trans_d = (double)num_of_trans;
+	min_sup = (int)(min_sup_d*num_of_trans_d);
+	cout << "min_sup : " << min_sup << endl;
 	sort(one_item_set.begin(), one_item_set.end());
 	reverse(one_item_set.begin(), one_item_set.end());
 
@@ -241,6 +246,7 @@ int main(int argc, char *argv[])
 	priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp> freq_items;
 	vector<int> prefix;
 	tree_mining(&fp, one_item_set, freq_items, prefix);
+	cout << freq_items.size() << endl;
 	output_freq_sets(freq_items, output_path);
 
 	return 0;
@@ -445,7 +451,7 @@ void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, priority_queu
 		vector<int> new_set(prefix);
 		new_set.push_back(it1->second);
 
-		// vector< vector<int> > re_transactions;
+		vector< vector<int> > re_transactions;
 		vector< pair<int, int> > new_one_item_set;
 		vector<pair<vector<int>, int> > cond_pat;
 
@@ -454,8 +460,8 @@ void tree_mining(Tree *tr, vector< pair<int, int> >& one_item_set, priority_queu
 		Tree t = Tree(cond_pat);
 
 
-		// build_cond_fptr_retransaction(it1->second, tr, re_transactions, one_item_set_ss);
-		// print_pairs(one_item_set_ss);
+		// build_cond_fptr_retransaction(it1->second, tr, re_transactions, new_one_item_set);
+		// print_pairs(new_one_item_set);
 		// Tree t = Tree(re_transactions);
 
 		sort(new_set.begin(), new_set.end());
@@ -505,7 +511,7 @@ void output_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<
 				fprintf(p, "%d", *it);
 		}
 		double f(freq_items.top().second);
-		double sup_percent = round((f/num_of_trans)*10000) / 10000;
+		double sup_percent = round((f/num_of_trans_d)*10000) / 10000;
 		fprintf(p, ":%.4f\n", sup_percent);
 
 		freq_items.pop();
