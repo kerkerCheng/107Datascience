@@ -4,7 +4,7 @@ CXX = g++
 CXXFLAGS = -O3 --std=c++11
 
 main.exe: main.cpp fp_tree.hpp
-	$(CXX) $(CXXFLAGS) -o
+	$(CXX) $(CXXFLAGS) main.cpp -o main.exe
 
 .PHONY: clean
 
