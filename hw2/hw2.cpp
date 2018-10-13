@@ -7,12 +7,14 @@
 #include <algorithm>
 #include <map>
 #include <queue>
+#include <math.h>
 #include "fp_tree.hpp"
 #define MAX_FREQ	1000000
 
 using namespace std;
 
-int min_sup = 500;
+int min_sup;
+double num_of_trans;
 
 struct Comp{
     bool operator()(const pair<vector<int>, int>& a, const pair<vector<int>, int>& b){
@@ -20,12 +22,14 @@ struct Comp{
         	return true;
         else if(a.first.size() < b.first.size())
         	return false;
-        else
+        else if(a.first.size() == b.first.size())
         {
         	for(int i=0; i<a.first.size(); i++)
         	{
-        		if((a.first)[i] > (b.first)[i])
+        		if((a.first).at(i) > (b.first).at(i))
         			return true;
+        		else if((a.first).at(i) < (b.first).at(i))
+        			return false;
         	}
         }
         return false;
@@ -195,7 +199,7 @@ int main(int argc, char *argv[])
 	}
 
 	//Get 1-item ordered set
-	int num_of_trans = transactions.size();
+	num_of_trans = (double)transactions.size();
 	sort(one_item_set.begin(), one_item_set.end());
 	reverse(one_item_set.begin(), one_item_set.end());
 
@@ -500,7 +504,9 @@ void output_freq_sets(priority_queue<pair<vector<int>, int>, vector<pair<vector<
 			else
 				fprintf(p, "%d", *it);
 		}
-		fprintf(p, ":%d\n", freq_items.top().second);
+		double f(freq_items.top().second);
+		double sup_percent = round((f/num_of_trans)*10000) / 10000;
+		fprintf(p, ":%.4f\n", sup_percent);
 
 		freq_items.pop();
 	}
