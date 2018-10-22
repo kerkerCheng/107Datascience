@@ -248,8 +248,8 @@ int main(int argc, char *argv[])
 	// vector<pair<vector<int>, int> > freq_items;
 	priority_queue<pair<vector<int>, int>, vector<pair<vector<int>, int> >, Comp> freq_items;
 	vector<int> prefix;
-	// tree_mining(&fp, one_item_set, freq_items, prefix);
-	tree_mining2(&fp, one_item_set, freq_items);
+	tree_mining(&fp, one_item_set, freq_items, prefix);
+	// tree_mining2(&fp, one_item_set, freq_items);
 	cout << freq_items.size() << endl;
 	output_freq_sets(freq_items, output_path);
 
