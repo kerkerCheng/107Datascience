@@ -50,28 +50,19 @@ classifier = xgb.XGBClassifier(max_depth=9,
                                n_estimators=150,
                                silent=True,
                                n_jobs=4)
-num_splits = 3
-# kf = KFold(n_splits=num_splits, shuffle=True)
-# score = []
-# for train_index, validate_index in kf.split(X):
-#     X_train, X_validate = X[train_index], X[validate_index]
-#     y_train, y_validate = y[train_index], y[validate_index]
-#     classifier.fit(X_train, y_train)
-#     print(X_validate.shape)
-#     predictions = classifier.predict(X_validate)
-#     score.append(accuracy_score(y_validate, predictions))
 
+num_splits = 3
 # Cross-Validation
-# cv_results = cross_validate(classifier, train_X, y, cv=num_splits, return_train_score=False)
-# print(cv_results['test_score'])
+cv_results = cross_validate(classifier, train_X, y, cv=num_splits, return_train_score=False)
+print(cv_results['test_score'])
 
 
 # Prediction
-classifier.fit(train_X, y)
-ans = classifier.predict(test_X)
-
-with open(os.path.abspath('sub.csv'), 'w+') as f:
-    f.write('ID,ans\n')
-    for index, element in enumerate(ans):
-        f.write(str(index) + ',' + str(element) + '\n')
+# classifier.fit(train_X, y)
+# ans = classifier.predict(test_X)
+#
+# with open(os.path.abspath('sub.csv'), 'w+') as f:
+#     f.write('ID,ans\n')
+#     for index, element in enumerate(ans):
+#         f.write(str(index) + ',' + str(element) + '\n')
 
