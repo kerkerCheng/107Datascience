@@ -40,7 +40,7 @@ def read_file(train_path='train.csv', test_path='test.csv'):
     return train_X, test_X, y
 
 
-def grid_search(train_X, test_X, y):
+def grid_search(train_X, y):
 
     # Cross-Validation
 
@@ -77,7 +77,7 @@ def main():
     classifier_svm = svm.SVC(C=1.95)
     classifier_ada = AdaBoostClassifier(n_estimators=260, learning_rate=1.5)
 
-    # grid_search(train_X, test_X, y, classifier_xgb, classifier_svm, classifier_ada)
+    # grid_search(train_X, y, classifier_xgb, classifier_svm, classifier_ada)
 
     # Prediction
     voting_models = [('xgb', classifier_xgb), ('svm', classifier_svm), ('ada', classifier_ada)]
