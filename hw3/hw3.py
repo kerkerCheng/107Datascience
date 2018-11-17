@@ -13,15 +13,14 @@ from sklearn.feature_selection import RFE
 
 
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%m.%d_%H.%M')
-mask = [8, 13]
+mask = [2, 5, 7, 9]
 
 
 def read_file(train_path='train.csv', test_path='test.csv'):
     le = preprocessing.LabelEncoder()
-    le.fit
 
-    df_train = pd.read_csv(os.path.abspath(train_path), header=None)
-    df_test = pd.read_csv(os.path.abspath(test_path), header=None)
+    df_train = pd.read_csv(os.path.abspath(train_path), header=None, engine='python')
+    df_test = pd.read_csv(os.path.abspath(test_path), header=None, engine='python')
 
     # Remove useless columns
     df_train.drop(df_train.columns[mask], axis=1, inplace=True)
@@ -66,11 +65,14 @@ def grid_search(train_X, y):
 
     # parameters = {'C': [1.6, 1.65, 1.7, 1.75, 1.8, 1.85, 1.9, 1.95, 2.0], 'kernel': ['rbf']}
     # parameters = {'n_estimators': [160, 180, 200, 220, 240, 260, 280], 'learning_rate': [1.5, 1.7, 1.9, 2.1, 2.3]}
-    parameters = {'max_depth': [4, 6, 8, 10],
+    parameters = {'max_depth': [6, 8, 10, 12],
                   'learning_rate': [0.08, 0.1, 0.12],
                   'n_estimators': [180, 210, 240],
                   'n_jobs': [4],
-                  'objective': ['reg:logistic', 'reg:linear']}
+                  'objective': ['reg:logistic', 'reg:linear', 'binary:hinge'],
+                  'max_delta_step': [0, 2, 4, 6, 8],
+                  'min_child_weight': [1, 3, 5, 7, 9],
+                  'gamma': [0, 2, 4, 6]}
     num_splits = 3
     clf_grid = GridSearchCV(classifier_xgb, parameters, cv=num_splits, n_jobs=-1, verbose=2)
     clf_grid.fit(train_X, y)
@@ -107,8 +109,8 @@ def main():
     classifier_svm = svm.SVC(C=1.95)
     classifier_ada = AdaBoostClassifier(n_estimators=260, learning_rate=1.5)
 
-    # grid_search(train_X, y)
-    rfecv(train_X, y)
+    grid_search(train_X, y)
+    # rfecv(train_X, y)
 
     # Prediction
     # voting_models = [('xgb', classifier_xgb), ('svm', classifier_svm), ('ada', classifier_ada)]

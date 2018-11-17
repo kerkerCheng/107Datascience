@@ -8,19 +8,19 @@ from sklearn.model_selection import cross_validate
 from sklearn import svm
 from sklearn.ensemble import AdaBoostClassifier, VotingClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import KFold
 from sklearn import preprocessing
+from sklearn.metrics import accuracy_score
 
 train_path = 'train.csv'
 test_path = 'test.csv'
-mask = [2, 5]
+mask = []
 le = preprocessing.LabelEncoder()
 
-df_train = pd.read_csv(os.path.abspath(train_path), header=None)
-df_test = pd.read_csv(os.path.abspath(test_path), header=None)
+df_train = pd.read_csv(os.path.abspath(train_path), header=None, engine='python')
+df_test = pd.read_csv(os.path.abspath(test_path), header=None, engine='python')
 
 # Remove useless columns
-df_train.drop(df_train.columns[mask], axis=1, inplace=True)
-df_test.drop(df_test.columns[mask], axis=1, inplace=True)
 y = df_train.values[:, -1].astype(int)
 df_train.drop(df_train.columns[-1], axis=1, inplace=True)
 
@@ -37,12 +37,22 @@ for i in range(X_all.shape[1]):
 train_X = (X_all[:training_size, :])
 test_X = (X_all[training_size:, :])
 
+classifier_xgb = xgb.XGBClassifier(silent=True,
+                                   max_depth=4,
+                                   learning_rate=0.1,
+                                   n_estimators=210,
+                                   n_jobs=4,
+                                   objective='reg:logistic')
+kf = KFold(n_splits=3)
+result = []
 
-
-# Convert to one-hot encoding
-# df_all = pd.get_dummies(df_all)
-
-
-
-# Normalize
-# X[:, 0:5] = scale(X[:, 0:5], axis=1, copy=True)
+for i in range(train_X.shape[1]):
+    print(i)
+    x = np.delete(train_X, i, 1)
+    acc = []
+    for train_ind, test_ind in kf.split(x):
+        x_tr, x_ts = x[train_ind], x[test_ind]
+        y_tr, y_ts = y[train_ind], y[test_ind]
+        classifier_xgb.fit(x_tr, y_tr)
+        acc.append(accuracy_score(y_ts, classifier_xgb.predict(x_ts)))
+    result.append(acc)
