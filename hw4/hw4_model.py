@@ -11,7 +11,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def build(l2_regularization=0.01, number_of_classes=7):
+def build(l2_regularization=0.01, number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
     regulizer = regularizers.l2(l2_regularization)
 
@@ -62,7 +62,7 @@ def build(l2_regularization=0.01, number_of_classes=7):
 
     outputs = Dense(256, activation='relu')(outputs)
     outputs = Dense(64, activation='relu')(outputs)
-    outputs = Dense(10, activation='softmax')(outputs)
+    outputs = Dense(number_of_classes, activation='softmax')(outputs)
 
     model = Model(inputs=inputs, outputs=outputs)
 
