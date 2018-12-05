@@ -5,15 +5,129 @@ from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D,
 from keras.models import Model
 from keras.optimizers import Adam, SGD
 from keras.applications import inception_resnet_v2
-from keras import regularizers
+from keras.regularizers import l2
 from keras.initializers import glorot_normal
+from keras import backend as K
 import numpy as np
 import matplotlib.pyplot as plt
 
 
+def three_conv_bn_relu(nb_filters, kernel_size=3):
+    filters = nb_filters
+    kernel_initializer = 'he_normal'
+    padding = 'same'
+    kernel_regularizer = l2(1.e-4)
+
+    def f(inputs):
+        out = Conv2D(filters=filters[0],
+                     kernel_size=(1, 1),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(inputs)
+        out = BatchNormalization()(out)
+        out = Activation('relu')(out)
+
+        out = Conv2D(filters=filters[1],
+                     kernel_size=(kernel_size, kernel_size),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(out)
+        out = BatchNormalization()(out)
+        out = Activation('relu')(out)
+
+        out = Conv2D(filters=filters[2],
+                     kernel_size=(1, 1),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(out)
+        out = BatchNormalization()(out)
+
+        out = Add()([out, inputs])
+        out = Activation('relu')(out)
+        return out
+    return f
+
+
+def conv_block(nb_filters, kernel_size=3):
+    filters = nb_filters
+    kernel_initializer = 'he_normal'
+    padding = 'same'
+    kernel_regularizer = l2(1.e-4)
+
+    def f(inputs):
+        out = Conv2D(filters=filters[0],
+                     kernel_size=(1, 1),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(inputs)
+        out = BatchNormalization()(out)
+        out = Activation('relu')(out)
+
+        out = Conv2D(filters=filters[1],
+                     kernel_size=(kernel_size, kernel_size),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(out)
+        out = BatchNormalization()(out)
+        out = Activation('relu')(out)
+
+        out = Conv2D(filters=filters[2],
+                     kernel_size=(1, 1),
+                     kernel_initializer=kernel_initializer,
+                     padding=padding,
+                     kernel_regularizer=kernel_regularizer)(out)
+        out = BatchNormalization()(out)
+
+        inputs = Conv2D(filters=filters[2],
+                        kernel_size=(1, 1),
+                        kernel_initializer=kernel_initializer,
+                        padding=padding,
+                        kernel_regularizer=kernel_regularizer)(inputs)
+        inputs = BatchNormalization()(inputs)
+
+        out = Add()([inputs, out])
+        out = Activation('relu')(out)
+        return out
+    return f
+
+
+def build_Res(number_of_classes=10):
+    inputs = Input(shape=(28, 28, 1))
+    out = Conv2D(filters=8, kernel_size=(5, 5))(inputs)
+    out = BatchNormalization()(out)
+    out = Activation('relu')(out)
+
+    out = conv_block((16, 16, 64))(out)
+    out = three_conv_bn_relu((16, 16, 64))(out)
+    out = three_conv_bn_relu((16, 16, 64))(out)
+
+    out = conv_block((32, 32, 128))(out)
+    out = three_conv_bn_relu((32, 32, 128))(out)
+    out = three_conv_bn_relu((32, 32, 128))(out)
+    out = three_conv_bn_relu((32, 32, 128))(out)
+    out = three_conv_bn_relu((32, 32, 128))(out)
+
+    out = conv_block((64, 64, 256))(out)
+    out = three_conv_bn_relu((64, 64, 256))(out)
+    out = three_conv_bn_relu((64, 64, 256))(out)
+
+    out = AveragePooling2D((5, 5))(out)
+    out = Flatten()(out)
+    out = Dense(10, activation='softmax')(out)
+
+    opt = Adam(0.005)
+    model = Model(inputs=inputs, outputs=out)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+
+    print(model.summary())
+
+    return model
+
+
 def build(l2_regularization=0.01, number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
-    regulizer = regularizers.l2(l2_regularization)
 
     # CNN part
     outputs = Conv2D(filters=8, kernel_size=(3, 3), padding='same')(inputs)

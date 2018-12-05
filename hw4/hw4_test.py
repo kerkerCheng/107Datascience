@@ -4,8 +4,8 @@ from keras.models import load_model
 
 
 def main():
-    model_name = 'model_2018.12.05_13.41_69_0.21.hdf5'
-    model_path = './logs/2018.12.05_13.41/' + model_name
+    model_name = 'model_2018.12.05_16.14_87_0.93.hdf5'
+    model_path = './logs/2018.12.05_16.14/' + model_name
     test_path = os.path.abspath('./test.csv')
     output_path = os.path.abspath('./' + model_name + '_ans.csv')
     test_arr = np.genfromtxt(test_path, delimiter=',', dtype='str', skip_header=1)
