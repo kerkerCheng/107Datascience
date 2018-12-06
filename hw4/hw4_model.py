@@ -117,17 +117,22 @@ def build_Res(number_of_classes=10):
     out = Conv2D(filters=64, kernel_size=(5, 5), padding='same')(inputs)
     out = BatchNormalization()(out)
     out = Activation('relu')(out)
+    out = Conv2D(filters=128, kernel_size=(1, 1), padding='same')(out)
 
-    out = conv_block2((64, 64))(out)
-    out = conv_block2((64, 128))(out)
-    out = conv_block2((128, 256))(out)
-    out = conv_block2((256, 512))(out)
+    out = conv_block2((128, 128))(out)
+    out = Conv2D(filters=256, kernel_size=(1, 1), padding='same')(out)
 
+    out = conv_block2((256, 256))(out)
+    out = Conv2D(filters=512, kernel_size=(1, 1), padding='same')(out)
+
+    out = conv_block2((512, 512))(out)
     out = AveragePooling2D((3, 3))(out)
+
     out = Flatten()(out)
-    out = Dense(256)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
-    out = BatchNormalization()(out)
+
+    # out = Dense(256)(out)
+    # out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    # out = BatchNormalization()(out)
     out = Dense(number_of_classes, activation='softmax')(out)
 
     opt = Adam(0.01)
