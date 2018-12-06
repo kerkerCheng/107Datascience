@@ -62,7 +62,7 @@ def main():
     call_back = [hist, early_stop, model_checkpoint, reduce_lr]
 
     # Train #
-    classifier = md.model_2()
+    classifier = md.model_3()
     classifier.fit_generator(img_generator,
                              epochs=num_epo,
                              verbose=verbose,
@@ -71,7 +71,7 @@ def main():
 
     classifier.save('model_last_' + timestamp + '.hdf5')
     md.output_history(hist, timestamp)
-    md.plot_acc(hist)
+    md.plot_acc(hist, timestamp)
 
 
 if __name__ == "__main__":

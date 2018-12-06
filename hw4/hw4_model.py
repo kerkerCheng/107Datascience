@@ -314,7 +314,8 @@ def output_history(his, timestamp):
         f.writelines("%f\n" % i for i in his.validation_acc)
 
 
-def plot_acc(his):
+def plot_acc(his, timestamp):
+    fig = plt.figure()
     x = np.arange(0, len(his.train_acc))
     y1 = his.train_acc
     y2 = his.validation_acc
@@ -324,6 +325,7 @@ def plot_acc(his):
     plt.xlabel('num. of epochs', fontsize=12)
     plt.ylabel('acc. (%)', fontsize=12)
     plt.show()
+    fig.savefig('./logs/' + timestamp + '/' + timestamp + '.png')
 
 
 class LossHistory(Callback):
