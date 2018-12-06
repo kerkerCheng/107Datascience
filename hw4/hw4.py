@@ -17,6 +17,8 @@ def show_image(img):
 
 
 def main():
+    which_model = sys.argv[1]
+
     csv_path = os.path.abspath('./train.csv')
     csv_arr = np.genfromtxt(csv_path, delimiter=',', dtype='str', skip_header=1)
 
@@ -62,7 +64,13 @@ def main():
     call_back = [hist, early_stop, model_checkpoint, reduce_lr]
 
     # Train #
-    classifier = md.buildRes()
+    classifier = None
+    if which_model == '1':
+        classifier = md.build_Res()
+    elif which_model == '2':
+        classifier = md.model_2()
+    elif which_model == '3':
+        classifier = md.model_3()
     classifier.fit_generator(img_generator,
                              epochs=num_epo,
                              verbose=verbose,
