@@ -60,7 +60,7 @@ def main():
                                        monitor='val_acc',
                                        save_best_only=True,
                                        verbose=1)
-    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.75, patience=4, verbose=1)
+    reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.75, patience=8, verbose=1)
     call_back = [hist, early_stop, model_checkpoint, reduce_lr]
 
     # Train #
