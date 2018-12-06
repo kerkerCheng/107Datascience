@@ -38,9 +38,9 @@ def three_conv_bn_relu(nb_filters, kernel_size=3):
                      kernel_initializer=kernel_initializer,
                      padding=padding)(out)
         out = Dropout(0.5)(out)
-        out = BatchNormalization()(out)
 
         out = Add()([out, inputs])
+        out = BatchNormalization()(out)
         out = Activation('selu')(out)
         return out
     return f
@@ -71,15 +71,14 @@ def conv_block(nb_filters, kernel_size=3):
                      kernel_initializer=kernel_initializer,
                      padding=padding)(out)
         out = Dropout(0.5)(out)
-        out = BatchNormalization()(out)
 
         inputs = Conv2D(filters=filters[2],
                         kernel_size=(1, 1),
                         kernel_initializer=kernel_initializer,
                         padding=padding)(inputs)
-        inputs = BatchNormalization()(inputs)
 
         out = Add()([inputs, out])
+        out = BatchNormalization()(out)
         out = Activation('selu')(out)
         return out
     return f
@@ -87,26 +86,22 @@ def conv_block(nb_filters, kernel_size=3):
 
 def build_Res(number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
-    out = Conv2D(filters=8, kernel_size=(5, 5), padding='same')(inputs)
+    out = Conv2D(filters=64, kernel_size=(5, 5), padding='same')(inputs)
     out = BatchNormalization()(out)
     out = Activation('relu')(out)
 
-    out = conv_block((8, 8, 16))(out)
-    out = three_conv_bn_relu((8, 8, 16))(out)
-    out = three_conv_bn_relu((8, 8, 16))(out)
-
-    out = conv_block((16, 16, 32))(out)
-    out = three_conv_bn_relu((16, 16, 32))(out)
-    out = three_conv_bn_relu((16, 16, 32))(out)
-
-    out = conv_block((32, 32, 64))(out)
-    out = three_conv_bn_relu((32, 32, 64))(out)
-
     out = conv_block((64, 64, 128))(out)
-    out = three_conv_bn_relu((64, 64, 128))(out)
+    out = conv_block((128, 128, 256))(out)
+    out = conv_block((256, 256, 512))(out)
 
     out = AveragePooling2D((5, 5))(out)
     out = Flatten()(out)
+    out = Dense(256)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = BatchNormalization()(out)
+    out = Dense(128)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = BatchNormalization()(out)
     out = Dense(number_of_classes, activation='softmax')(out)
 
     opt = Adam(0.01)
