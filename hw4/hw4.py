@@ -62,7 +62,7 @@ def main():
     call_back = [hist, early_stop, model_checkpoint, reduce_lr]
 
     # Train #
-    classifier = md.model_3()
+    classifier = md.buildRes()
     classifier.fit_generator(img_generator,
                              epochs=num_epo,
                              verbose=verbose,
