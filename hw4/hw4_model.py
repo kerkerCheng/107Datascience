@@ -3,6 +3,7 @@ from keras.callbacks import Callback
 from keras.layers import Dense, Dropout, Flatten, Conv2D, BatchNormalization, Activation, Input
 from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D, SeparableConv2D, Add
 from keras.models import Model
+from keras.layers import advanced_activations
 from keras.optimizers import Adam, SGD
 from keras.applications import inception_resnet_v2
 from keras.regularizers import l2
@@ -16,34 +17,30 @@ def three_conv_bn_relu(nb_filters, kernel_size=3):
     filters = nb_filters
     kernel_initializer = 'he_normal'
     padding = 'same'
-    kernel_regularizer = l2(1.e-4)
 
     def f(inputs):
         out = Conv2D(filters=filters[0],
                      kernel_size=(1, 1),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(inputs)
+                     padding=padding)(inputs)
         out = BatchNormalization()(out)
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
 
         out = Conv2D(filters=filters[1],
                      kernel_size=(kernel_size, kernel_size),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(out)
+                     padding=padding)(out)
         out = BatchNormalization()(out)
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
 
         out = Conv2D(filters=filters[2],
                      kernel_size=(1, 1),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(out)
+                     padding=padding)(out)
         out = BatchNormalization()(out)
 
         out = Add()([out, inputs])
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
         return out
     return f
 
@@ -52,41 +49,36 @@ def conv_block(nb_filters, kernel_size=3):
     filters = nb_filters
     kernel_initializer = 'he_normal'
     padding = 'same'
-    kernel_regularizer = l2(1.e-4)
 
     def f(inputs):
         out = Conv2D(filters=filters[0],
                      kernel_size=(1, 1),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(inputs)
+                     padding=padding)(inputs)
         out = BatchNormalization()(out)
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
 
         out = Conv2D(filters=filters[1],
                      kernel_size=(kernel_size, kernel_size),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(out)
+                     padding=padding)(out)
         out = BatchNormalization()(out)
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
 
         out = Conv2D(filters=filters[2],
                      kernel_size=(1, 1),
                      kernel_initializer=kernel_initializer,
-                     padding=padding,
-                     kernel_regularizer=kernel_regularizer)(out)
+                     padding=padding)(out)
         out = BatchNormalization()(out)
 
         inputs = Conv2D(filters=filters[2],
                         kernel_size=(1, 1),
                         kernel_initializer=kernel_initializer,
-                        padding=padding,
-                        kernel_regularizer=kernel_regularizer)(inputs)
+                        padding=padding)(inputs)
         inputs = BatchNormalization()(inputs)
 
         out = Add()([inputs, out])
-        out = Activation('relu')(out)
+        out = Activation('selu')(out)
         return out
     return f
 
@@ -115,7 +107,7 @@ def build_Res(number_of_classes=10):
     out = Flatten()(out)
     out = Dense(10, activation='softmax')(out)
 
-    opt = Adam(0.005)
+    opt = Adam(0.01)
     model = Model(inputs=inputs, outputs=out)
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
@@ -126,7 +118,128 @@ def build_Res(number_of_classes=10):
     return model
 
 
-def build(l2_regularization=0.01, number_of_classes=10):
+def model_2(number_of_classes=10):
+    inputs = Input(shape=(28, 28, 1))
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(inputs)
+    out = BatchNormalization()(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.2)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2), padding='same')(out)
+    out = Dropout(0.25)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=128, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=128, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2), padding='same')(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=256, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=512, kernel_size=(5, 5), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2))(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
+    out = Flatten()(out)
+
+    out = Dense(512)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(512)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(128)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.5)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(128)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.6)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(number_of_classes, activation='softmax')(out)
+
+    model = Model(inputs=inputs, outputs=out)
+
+    opt = Adam(0.01)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+
+    print(model.summary())
+
+    return model
+
+
+def model_3(number_of_classes=10):
+    inputs = Input(shape=(28, 28, 1))
+    outputs = Conv2D(filters=64, kernel_size=(3, 3), padding='same', kernel_initializer='he_normal')(inputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Conv2D(filters=64, kernel_size=(3, 3), padding='same', kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Conv2D(filters=128, kernel_size=(3, 3), padding='same', kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.3)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = MaxPooling2D()(outputs)
+
+    outputs = Conv2D(filters=256, kernel_size=(3, 3), padding='same', kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Conv2D(filters=256, kernel_size=(4, 4), padding='same', kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.3)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Conv2D(filters=512, kernel_size=(5, 5), padding='same', kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.3)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = MaxPooling2D()(outputs)
+
+    outputs = Flatten()(outputs)
+    outputs = Dense(512, kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.3)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Dense(512, kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.6)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Dense(256, kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.6)(outputs)
+    outputs = advanced_activations.PReLU()(outputs)
+    outputs = Dense(128, kernel_initializer='he_normal')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.6)(outputs)
+    outputs = advanced_activations.LeakyReLU(0.5)(outputs)
+    outputs = Dense(number_of_classes, activation='softmax')(outputs)
+    model = Model(inputs=inputs, outputs=outputs)
+
+    opt = Adam(0.01)
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+
+    print(model.summary())
+
+    return model
+
+
+def build(number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
 
     # CNN part
