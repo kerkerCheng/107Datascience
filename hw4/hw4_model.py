@@ -77,6 +77,7 @@ def conv_block(nb_filters, kernel_size=3):
                         kernel_initializer=kernel_initializer,
                         padding=padding)(inputs)
 
+
         out = Add()([inputs, out])
         out = BatchNormalization()(out)
         out = Activation('selu')(out)
