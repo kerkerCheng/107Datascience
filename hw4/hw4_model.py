@@ -85,22 +85,47 @@ def conv_block(nb_filters, kernel_size=3):
     return f
 
 
+def conv_block2(nb_filters, kernel_size=3):
+    filters = nb_filters
+    kernel_initializer = 'he_normal'
+    padding = 'same'
+
+    def f(inputs):
+        out = Conv2D(filters=filters[0],
+                     kernel_size=(kernel_size, kernel_size),
+                     padding=padding)(inputs)
+        out = BatchNormalization()(out)
+        out = Activation('selu')(out)
+
+        out = Conv2D(filters=filters[1],
+                     kernel_size=(kernel_size, kernel_size),
+                     padding=padding)(out)
+        out = BatchNormalization()(out)
+        out = Activation('selu')(out)
+
+        out = Add()([inputs, out])
+        out = BatchNormalization()(out)
+        out = Activation('selu')(out)
+        return out
+
+    return f
+
+
+
 def build_Res(number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
     out = Conv2D(filters=64, kernel_size=(5, 5), padding='same')(inputs)
     out = BatchNormalization()(out)
     out = Activation('relu')(out)
 
-    out = conv_block((64, 64, 128))(out)
-    out = conv_block((128, 128, 256))(out)
-    out = conv_block((256, 256, 512))(out)
+    out = conv_block2((64, 64))(out)
+    out = conv_block2((64, 128))(out)
+    out = conv_block2((128, 256))(out)
+    out = conv_block2((256, 512))(out)
 
-    out = AveragePooling2D((5, 5))(out)
+    out = AveragePooling2D((3, 3))(out)
     out = Flatten()(out)
     out = Dense(256)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
-    out = BatchNormalization()(out)
-    out = Dense(128)(out)
     out = advanced_activations.LeakyReLU(alpha=0.5)(out)
     out = BatchNormalization()(out)
     out = Dense(number_of_classes, activation='softmax')(out)
