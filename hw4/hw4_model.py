@@ -57,14 +57,14 @@ def conv_block(nb_filters, kernel_size=3):
                      kernel_initializer=kernel_initializer,
                      padding=padding)(inputs)
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
 
         out = Conv2D(filters=filters[1],
                      kernel_size=(kernel_size, kernel_size),
                      kernel_initializer=kernel_initializer,
                      padding=padding)(out)
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
 
         out = Conv2D(filters=filters[2],
                      kernel_size=(1, 1),
@@ -77,10 +77,9 @@ def conv_block(nb_filters, kernel_size=3):
                         kernel_initializer=kernel_initializer,
                         padding=padding)(inputs)
 
-
         out = Add()([inputs, out])
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
         return out
     return f
 
@@ -95,17 +94,17 @@ def conv_block2(nb_filters, kernel_size=3):
                      kernel_size=(kernel_size, kernel_size),
                      padding=padding)(inputs)
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
 
         out = Conv2D(filters=filters[1],
                      kernel_size=(kernel_size, kernel_size),
                      padding=padding)(out)
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
 
         out = Add()([inputs, out])
         out = BatchNormalization()(out)
-        out = Activation('selu')(out)
+        out = Activation('relu')(out)
         return out
 
     return f
@@ -114,7 +113,7 @@ def conv_block2(nb_filters, kernel_size=3):
 
 def build_Res(number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
-    out = Conv2D(filters=64, kernel_size=(5, 5), padding='same')(inputs)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(inputs)
     out = BatchNormalization()(out)
     out = Activation('relu')(out)
     out = Conv2D(filters=128, kernel_size=(1, 1), padding='same')(out)
@@ -123,6 +122,7 @@ def build_Res(number_of_classes=10):
     out = Conv2D(filters=256, kernel_size=(1, 1), padding='same')(out)
 
     out = conv_block2((256, 256))(out)
+    out = MaxPooling2D((2, 2))(out)
     out = Conv2D(filters=512, kernel_size=(1, 1), padding='same')(out)
 
     out = conv_block2((512, 512))(out)
