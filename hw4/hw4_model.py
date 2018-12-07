@@ -5,7 +5,7 @@ from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D,
 from keras.models import Model
 from keras.layers import advanced_activations
 from keras.optimizers import Adam, SGD
-from keras.applications import inception_resnet_v2
+from keras.applications.xception import Xception
 from keras.regularizers import l2
 from keras.initializers import glorot_normal
 from keras import backend as K
@@ -280,6 +280,12 @@ def model_3(number_of_classes=10):
 
     print(model.summary())
 
+    return model
+
+
+def model_4(number_of_classes=10):
+    model = Xception(weights=None,
+                     classes=number_of_classes)
     return model
 
 
