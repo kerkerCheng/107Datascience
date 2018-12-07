@@ -110,20 +110,28 @@ def conv_block2(nb_filters, kernel_size=3):
     return f
 
 
-
 def build_Res(number_of_classes=10):
     inputs = Input(shape=(28, 28, 1))
     out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(inputs)
     out = BatchNormalization()(out)
     out = Activation('relu')(out)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(inputs)
+    out = BatchNormalization()(out)
+    out = Activation('relu')(out)
     out = Conv2D(filters=128, kernel_size=(1, 1), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Activation('relu')(out)
 
     out = conv_block2((128, 128))(out)
     out = Conv2D(filters=256, kernel_size=(1, 1), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Activation('relu')(out)
 
     out = conv_block2((256, 256))(out)
     out = MaxPooling2D((2, 2))(out)
     out = Conv2D(filters=512, kernel_size=(1, 1), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Activation('relu')(out)
 
     out = conv_block2((512, 512))(out)
     out = AveragePooling2D((3, 3))(out)
