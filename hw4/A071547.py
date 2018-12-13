@@ -245,11 +245,10 @@ def main():
     verbose = 2
 
     # Image augmentation #
-    data_gen = image.ImageDataGenerator(rotation_range=15,
-                                        shear_range=0.08,
-                                        width_shift_range=0.08,
-                                        height_shift_range=0.08,
-                                        horizontal_flip=True)
+    data_gen = image.ImageDataGenerator(horizontal_flip=True,
+                                        rotation_range=10,
+                                        width_shift_range=0.05,
+                                        height_shift_range=0.05)
     data_gen.fit(X_train, augment=True)
     img_generator = data_gen.flow(X_train, y_train, batch_size=batch_size)
 
