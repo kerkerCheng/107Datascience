@@ -4,7 +4,7 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, BatchNormalization, Ac
 from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D, SeparableConv2D, Add
 from keras.models import Model
 from keras.layers import advanced_activations
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adadelta
 from keras.applications import inception_resnet_v2
 from keras.regularizers import l2
 from keras.initializers import glorot_normal
@@ -202,7 +202,7 @@ def model_2(number_of_classes=10):
 
     model = Model(inputs=inputs, outputs=out)
 
-    opt = Adam(0.01)
+    opt = Adadelta()
     model.compile(loss='categorical_crossentropy',
                   optimizer=opt,
                   metrics=['accuracy'])

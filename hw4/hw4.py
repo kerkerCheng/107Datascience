@@ -45,11 +45,7 @@ def main():
     model_names = 'model_' + timestamp + '_{epoch:02d}_{val_acc:.2f}.hdf5'
 
     # Image augmentation #
-    data_gen = image.ImageDataGenerator(rotation_range=15,
-                                        shear_range=0.08,
-                                        width_shift_range=0.08,
-                                        height_shift_range=0.08,
-                                        horizontal_flip=True)
+    data_gen = image.ImageDataGenerator(horizontal_flip=True)
     data_gen.fit(X_train, augment=True)
     img_generator = data_gen.flow(X_train, y_train, batch_size=batch_size)
 
