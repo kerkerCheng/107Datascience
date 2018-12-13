@@ -75,6 +75,7 @@ def main():
                                  epochs=num_epo,
                                  verbose=verbose,
                                  validation_data=(X_val, y_val),
+                                 steps_per_epoch=60000/batch_size,
                                  callbacks=call_back)
 
         classifier.save('model_last_' + timestamp + '.hdf5')
