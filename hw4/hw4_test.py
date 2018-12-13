@@ -5,13 +5,13 @@ from scipy import stats
 
 
 def main():
-    model_name1 = 'model_2018.12.05_21.44_71_0.95.hdf5'
+    model_name1 = 'model_2018.12.13_13.27_79_0.96.hdf5'
     model_path1 = model_name1
 
-    model_name2 = 'model_2018.12.06_15.46_67_0.95.hdf5'
+    model_name2 = 'model_2018.12.05_21.44_71_0.95.hdf5'
     model_path2 = model_name2
 
-    model_name3 = 'model_2018.12.07_09.58_70_0.95.hdf5'
+    model_name3 = 'model_2018.12.06_15.46_67_0.95.hdf5'
     model_path3 = model_name3
 
     test_path = os.path.abspath('./test.csv')
