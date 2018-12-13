@@ -4,6 +4,33 @@ from keras.models import load_model
 from scipy import stats
 
 
+def main_2():
+    model_name = 'model_2018.12.13_13.27_79_0.96.hdf5'
+    model_path = model_name
+
+    test_path = os.path.abspath('./test.csv')
+    output_path = os.path.abspath('./' + model_name + '_ans.csv')
+    test_arr = np.genfromtxt(test_path, delimiter=',', dtype='str', skip_header=1)
+
+    X = np.zeros((test_arr.shape[0], 28 * 28))
+    for i in range(0, test_arr.shape[0]):
+        X[i][:] = test_arr[i][1:]
+
+    X = X.reshape((test_arr.shape[0], 28, 28, 1))
+    X = X / 255.0
+
+    classifier = load_model(model_path)
+
+    ans_proba = classifier.predict(X, batch_size=256, verbose=1)
+    ans_class = ans_proba.argmax(axis=-1)
+
+    with open(output_path, 'w+', encoding='utf-8') as f:
+        f.write('id,label' + '\n')
+        for i in range(len(ans_class)):
+            f.write(str(i) + ',' + str(int(ans_class[i])) + '\n')
+        f.close()
+
+
 def main():
     model_name1 = 'model_2018.12.13_13.27_79_0.96.hdf5'
     model_path1 = model_name1
@@ -53,4 +80,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main_2()

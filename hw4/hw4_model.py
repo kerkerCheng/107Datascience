@@ -256,19 +256,23 @@ def model_3(number_of_classes=10):
     out = Dense(512)(out)
     out = BatchNormalization()(out)
     out = Dropout(0.3)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
     out = Dense(512)(out)
     out = BatchNormalization()(out)
     out = Dropout(0.3)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
     out = Dense(128)(out)
     out = BatchNormalization()(out)
-    out = Dropout(0.5)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.4)(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.PReLU()(out)
+
     out = Dense(128)(out)
     out = BatchNormalization()(out)
-    out = Dropout(0.6)(out)
-    out = advanced_activations.LeakyReLU(alpha=0.4)(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.PReLU()(out)
+
     out = Dense(number_of_classes, activation='softmax')(out)
 
     model = Model(inputs=inputs, outputs=out)
@@ -284,8 +288,70 @@ def model_3(number_of_classes=10):
 
 
 def model_4(number_of_classes=10):
-    model = Xception(weights=None,
-                     classes=number_of_classes)
+    inputs = Input(shape=(28, 28, 1))
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(inputs)
+    out = BatchNormalization()(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=64, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2))(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
+    out = Conv2D(filters=128, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=128, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2))(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
+    out = Conv2D(filters=256, kernel_size=(3, 3), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+    out = Conv2D(filters=512, kernel_size=(5, 5), padding='same')(out)
+    out = BatchNormalization()(out)
+    out = MaxPooling2D(pool_size=(2, 2))(out)
+    out = Dropout(0.4)(out)
+    out = advanced_activations.PReLU()(out)
+
+    out = Flatten()(out)
+
+    out = Dense(512)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(512)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.3)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(128)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.5)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(128)(out)
+    out = BatchNormalization()(out)
+    out = Dropout(0.6)(out)
+    out = advanced_activations.LeakyReLU(alpha=0.5)(out)
+    out = Dense(number_of_classes, activation='softmax')(out)
+
+    model = Model(inputs=inputs, outputs=out)
+
+    opt = Adadelta()
+    model.compile(loss='categorical_crossentropy',
+                  optimizer=opt,
+                  metrics=['accuracy'])
+
+    print(model.summary())
+
+    return model
+
     return model
 
 

@@ -45,7 +45,10 @@ def main():
     model_names = 'model_' + timestamp + '_{epoch:02d}_{val_acc:.2f}.hdf5'
 
     # Image augmentation #
-    data_gen = image.ImageDataGenerator(horizontal_flip=True)
+    data_gen = image.ImageDataGenerator(horizontal_flip=True,
+                                        rotation_range=10,
+                                        width_shift_range=0.05,
+                                        height_shift_range=0.05)
     data_gen.fit(X_train, augment=True)
     img_generator = data_gen.flow(X_train, y_train, batch_size=batch_size)
 
@@ -70,17 +73,16 @@ def main():
     elif which_model == '4':
         classifier = md.model_4()
 
-    if which_model != '4':
-        classifier.fit_generator(img_generator,
-                                 epochs=num_epo,
-                                 verbose=verbose,
-                                 validation_data=(X_val, y_val),
-                                 steps_per_epoch=60000/batch_size,
-                                 callbacks=call_back)
+    classifier.fit_generator(img_generator,
+                             epochs=num_epo,
+                             verbose=verbose,
+                             validation_data=(X_val, y_val),
+                             steps_per_epoch=60000/batch_size,
+                             callbacks=call_back)
 
-        classifier.save('model_last_' + timestamp + '.hdf5')
-        md.output_history(hist, timestamp)
-        md.plot_acc(hist, timestamp)
+    classifier.save('model_last_' + timestamp + '.hdf5')
+    md.output_history(hist, timestamp)
+    md.plot_acc(hist, timestamp)
 
 
 if __name__ == "__main__":
