@@ -4,8 +4,13 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, BatchNormalization, Ac
 from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D, SeparableConv2D, Add
 from keras.models import Model
 from keras.layers import advanced_activations
+<<<<<<< HEAD
 from keras.optimizers import Adam, SGD, Adadelta
 from keras.applications import inception_resnet_v2
+=======
+from keras.optimizers import Adam, SGD
+from keras.applications.xception import Xception
+>>>>>>> a5f28bb357fa091f7cc2a4aaa1e13bb3621ad0e4
 from keras.regularizers import l2
 from keras.initializers import glorot_normal
 from keras import backend as K
@@ -108,7 +113,6 @@ def conv_block2(nb_filters, kernel_size=3):
         return out
 
     return f
-
 
 
 def build_Res(number_of_classes=10):
@@ -281,6 +285,12 @@ def model_3(number_of_classes=10):
 
     print(model.summary())
 
+    return model
+
+
+def model_4(number_of_classes=10):
+    model = Xception(weights=None,
+                     classes=number_of_classes)
     return model
 
 
