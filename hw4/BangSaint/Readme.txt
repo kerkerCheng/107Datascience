@@ -1,4 +1,4 @@
-�ޤJ�禡�p�U:
+引入以下函式
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -11,9 +11,9 @@ from keras.layers import Dense, Dropout, Flatten, Conv2D, BatchNormalization, Ac
 from keras.layers import AveragePooling2D, GlobalAveragePooling2D, MaxPooling2D, SeparableConv2D, Add
 from keras.models import Model
 from keras.layers import advanced_activations
-from keras.optimizers import Adam, SGD
+from keras.optimizers import Adam, SGD, Adadelta
+from scipy import stats
 import time
 import datetime
 import os
 import sys
-import cv2
