@@ -270,3 +270,5 @@ RNN_model.fit(X_train, y_train,
               callbacks=call_back,
               verbose=1)
 RNN_model.save(timestamp + '_last.hdf5')
+output_history(hist, timestamp)
+plot_acc(hist)
