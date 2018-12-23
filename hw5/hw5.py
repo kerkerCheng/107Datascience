@@ -5,15 +5,18 @@ import time
 import datetime
 import os
 import matplotlib.pyplot as plt
+import tensorflow as tf
 from keras.preprocessing.text import text_to_word_sequence
 from keras.preprocessing.sequence import pad_sequences
 from gensim.models import word2vec
 from sklearn.model_selection import train_test_split
 from keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from keras.layers import Input, Dropout, Embedding, GRU, LSTM, Flatten, Dense, BatchNormalization
+from keras.layers import Input, Dropout, Embedding, GRU, LSTM, Flatten, Dense, BatchNormalization, Activation
 from keras.regularizers import l2
 from keras.optimizers import Adadelta, Adam
 from keras.models import Model
+from keras.utils.generic_utils import get_custom_objects
+from keras.backend import switch
 
 
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d_%H.%M')
@@ -23,14 +26,26 @@ class LossHistory(Callback):
     def on_train_begin(self, logs={}):
         self.train_loss = []
         self.validation_loss = []
-        self.train_acc = []
-        self.validation_acc = []
 
     def on_epoch_end(self, epoch, logs={}):
         self.train_loss.append(logs.get('loss'))
         self.validation_loss.append(logs.get('val_loss'))
-        self.train_acc.append(logs.get('acc'))
-        self.validation_acc.append(logs.get('val_acc'))
+        
+        
+class ReLUs(Activation):
+    
+    def __init__(self, activation, **kwargs):
+        super(ReLUs, self).__init__(activation, **kwargs)
+        self.__name__ = 'ReLU_s'        
+
+
+def relus(x):
+    y = tf.where(x<=-0.5, x-x, x)
+    z = tf.where(x>=4.5, y-y, y)
+    return z
+
+
+get_custom_objects().update({'ReLU_s': relus})
 
 
 def output_history(his, time):
@@ -38,21 +53,17 @@ def output_history(his, time):
         f.writelines("%f\n" % i for i in his.train_loss)
     with open('./logs/' + time + '/validation_loss', 'w+') as f:
         f.writelines("%f\n" % i for i in his.validation_loss)
-    with open('./logs/' + time + '/train_acc', 'w+') as f:
-        f.writelines("%f\n" % i for i in his.train_acc)
-    with open('./logs/' + time + '/validation_acc', 'w+') as f:
-        f.writelines("%f\n" % i for i in his.validation_acc)
 
 
 def plot_acc(his):
-    x = np.arange(0, len(his.train_acc))
-    y1 = his.train_acc
-    y2 = his.validation_acc
+    x = np.arange(0, len(his.train_loss))
+    y1 = his.train_loss
+    y2 = his.validation_loss
     plt.plot(x, y1)
     plt.plot(x, y2)
-    plt.legend([' training acc ', ' validation acc '], fontsize=12)
+    plt.legend([' training loss ', ' validation loss '], fontsize=12)
     plt.xlabel('num. of epochs', fontsize=12)
-    plt.ylabel('acc. (%)', fontsize=12)
+    plt.ylabel('loss', fontsize=12)
     plt.show()
 
 
@@ -176,7 +187,7 @@ def sentence_to_index_matrix(X, word2vec_model, paddingsize):
 
     for i in range(X_mat.shape[0]):
         sentece_index = []
-        print("幹你娘老雞掰" + str(i))
+        print(str(i))
         for ind, word in enumerate(X_mat[i]):
             sentece_index.append(word2vec_model.wv.vocab[word].index + 1)
         index_mat.append(sentece_index)
@@ -213,7 +224,7 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
     outputs = Dense(hid_size//4, activation='relu')(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.3)(outputs)
-    outputs = Dense(1, activation='relu')(outputs)
+    outputs = Dense(1, activation='ReLU_s')(outputs)
 
     model = Model(inputs=inputs, outputs=outputs)
 
@@ -235,10 +246,10 @@ word_vec_size = 128
 sentence_max_len = 150
 verbose = 1
 
-text_to_txt_file(X, X_test)
-word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
-                                   max_length=word_vec_size)
-# word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.22_15.11.model')
+#text_to_txt_file(X, X_test)
+#word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
+#                                   max_length=word_vec_size)
+word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.22_15.36.model')
 num_words = len(word2vec_model.wv.vocab)
 print('number of words = %d' % num_words)
 X_index = sentence_to_index_matrix(X, word2vec_model, sentence_max_len)
@@ -248,17 +259,18 @@ X_train, X_val, y_train, y_val = train_test_split(X_index, Y.values, test_size=0
 
 # Training Parameters #
 num_epo = 10000
-batch_size = 64
+batch_size = 256
 patience = 6
 
 # Training #
-os.makedirs('./logs/'+timestamp)
-model_names = 'model_' + timestamp + '_{epoch:02d}_{val_acc:.2f}.hdf5'
+if not os.path.exists('./logs/'+timestamp):
+    os.makedirs('./logs/'+timestamp)
+model_names = 'model_' + timestamp + '_{epoch:02d}_{val_loss:.2f}.hdf5'
 
 hist = LossHistory()
-early_stop = EarlyStopping(monitor='val_acc', patience=patience, verbose=1)
-model_checkpoint = ModelCheckpoint(model_names, monitor='val_acc', save_best_only=True, verbose=1)
-reduce_lr = ReduceLROnPlateau(monitor='val_acc', factor=0.75, patience=8, verbose=1)
+early_stop = EarlyStopping(monitor='val_loss', patience=patience, verbose=1)
+model_checkpoint = ModelCheckpoint(model_names, monitor='val_loss', save_best_only=True, verbose=1)
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.75, patience=8, verbose=1)
 call_back = [hist, early_stop, model_checkpoint]
 
 RNN_model = RNN(sentence_max_len, num_words, word_vec_size, word2vec_model)
