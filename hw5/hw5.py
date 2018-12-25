@@ -11,7 +11,7 @@ from keras.preprocessing.sequence import pad_sequences
 from gensim.models import word2vec
 from sklearn.model_selection import train_test_split
 from keras.callbacks import Callback, EarlyStopping, ReduceLROnPlateau, ModelCheckpoint
-from keras.layers import Input, Dropout, Embedding, GRU, LSTM, Flatten, Dense, BatchNormalization, Activation
+from keras.layers import Input, Dropout, Embedding, GRU, LSTM, Flatten, Dense, BatchNormalization, Activation, LeakyReLU
 from keras.regularizers import l2
 from keras.optimizers import Adadelta, Adam
 from keras.models import Model
@@ -220,13 +220,16 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
 
     # DNN #
     outputs = Flatten()(RNN_output)
-    outputs = Dense(256, activation='LeakyReLU')(outputs)
+    outputs = Dense(256)(outputs)
+    outputs = LeakyReLU()(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
-    outputs = Dense(256, activation='LeakyReLU')(outputs)
+    outputs = Dense(256)(outputs)
+    outputs = LeakyReLU()(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
-    outputs = Dense(128, activation='LeakyReLU')(outputs)
+    outputs = Dense(128)(outputs)
+    outputs = LeakyReLU()(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
     outputs = Dense(1, activation='sigmoid')(outputs)
@@ -265,10 +268,10 @@ word_vec_size = 200
 sentence_max_len = 200
 verbose = 1
 
-# text_to_txt_file(X, X_test)
-# word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
-#                                    max_length=word_vec_size)
-word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.22_15.36.model')
+#text_to_txt_file(X, X_test)
+#word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
+#                                   max_length=word_vec_size)
+word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.25_22.25.model')
 num_words = len(word2vec_model.wv.vocab)
 print('number of words = %d' % num_words)
 X_index = sentence_to_index_matrix(X, word2vec_model, sentence_max_len)
