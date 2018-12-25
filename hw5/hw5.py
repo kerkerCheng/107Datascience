@@ -213,18 +213,22 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
                          trainable=False)(inputs)
 
     # RNN #
-    hid_size = 384
-    RNN_output = GRU(hid_size, return_sequences=True, dropout=0.3)(embed_in)
+    hid_size = 256
+    RNN_output = LSTM(hid_size, return_sequences=True, dropout=0.5)(embed_in)
+    RNN_output = GRU(hid_size, return_sequences=True, dropout=0.5)(RNN_output)
 
     # DNN #
     outputs = Flatten()(RNN_output)
-    outputs = Dense(hid_size//2, activation='relu')(outputs)
+    outputs = Dense(256, activation='relu')(outputs)
     outputs = BatchNormalization()(outputs)
-    outputs = Dropout(0.3)(outputs)
-    outputs = Dense(hid_size//4, activation='relu')(outputs)
+    outputs = Dropout(0.5)(outputs)
+    outputs = Dense(256, activation='relu')(outputs)
     outputs = BatchNormalization()(outputs)
-    outputs = Dropout(0.3)(outputs)
-    outputs = Dense(1, activation='ReLU_s')(outputs)
+    outputs = Dropout(0.5)(outputs)
+    outputs = Dense(128, activation='relu')(outputs)
+    outputs = BatchNormalization()(outputs)
+    outputs = Dropout(0.5)(outputs)
+    outputs = Dense(1, activation='sigmoid')(outputs)
 
     model = Model(inputs=inputs, outputs=outputs)
 
@@ -239,7 +243,7 @@ test_df = pd.read_csv('test.csv', sep=',')
 
 X = input_df['text']
 X_test = test_df['text']
-Y = input_df['sentiment']
+Y = input_df['sentiment']/4.0
 
 # Parameters #
 word_vec_size = 128
@@ -259,18 +263,18 @@ X_train, X_val, y_train, y_val = train_test_split(X_index, Y.values, test_size=0
 
 # Training Parameters #
 num_epo = 10000
-batch_size = 256
-patience = 6
+batch_size = 1024
+patience = 4
 
 # Training #
 if not os.path.exists('./logs/'+timestamp):
     os.makedirs('./logs/'+timestamp)
-model_names = 'model_' + timestamp + '_{epoch:02d}_{val_loss:.2f}.hdf5'
+model_names = './logs/' + timestamp + '/model_' + timestamp + '_{epoch:02d}_{val_loss:.2f}.hdf5'
 
 hist = LossHistory()
 early_stop = EarlyStopping(monitor='val_loss', patience=patience, verbose=1)
 model_checkpoint = ModelCheckpoint(model_names, monitor='val_loss', save_best_only=True, verbose=1)
-reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.75, patience=8, verbose=1)
+# reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.75, patience=8, verbose=1)
 call_back = [hist, early_stop, model_checkpoint]
 
 RNN_model = RNN(sentence_max_len, num_words, word_vec_size, word2vec_model)
