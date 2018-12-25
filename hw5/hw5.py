@@ -17,6 +17,7 @@ from keras.optimizers import Adadelta, Adam
 from keras.models import Model
 from keras.utils.generic_utils import get_custom_objects
 from keras.backend import switch
+from keras.models import load_model
 
 
 timestamp = datetime.datetime.fromtimestamp(time.time()).strftime('%Y.%m.%d_%H.%M')
@@ -238,6 +239,20 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
     return model
 
 
+def testing(X_test, word2vec_model, paddingsize, RNN_model_path, output_path):
+    X_test_mat = sentence_to_index_matrix(X_test, word2vec_model, paddingsize)
+    predictor = load_model(os.path.abspath(RNN_model_path))
+
+    y_test_proba = predictor.predict(X_test_mat, verbose=1, batch_size=1024).squeeze()
+    y = y_test_proba*4.0
+
+    with open(os.path.abspath(output_path), 'w+') as f:
+        f.write('ID,Sentiment\n')
+        for ind, sent in enumerate(y):
+            f.write(str(ind) + ',' + str(sent) + '\n')
+        f.close()
+
+
 input_df = pd.read_csv('train.csv', sep=',')
 test_df = pd.read_csv('test.csv', sep=',')
 
@@ -250,9 +265,9 @@ word_vec_size = 128
 sentence_max_len = 150
 verbose = 1
 
-#text_to_txt_file(X, X_test)
-#word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
-#                                   max_length=word_vec_size)
+# text_to_txt_file(X, X_test)
+# word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
+#                                    max_length=word_vec_size)
 word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.22_15.36.model')
 num_words = len(word2vec_model.wv.vocab)
 print('number of words = %d' % num_words)
@@ -288,3 +303,5 @@ RNN_model.fit(X_train, y_train,
 RNN_model.save(timestamp + '_last.hdf5')
 output_history(hist, timestamp)
 plot_acc(hist)
+
+# testing(X_test, word2vec_model, sentence_max_len, model_names, 'answer.csv')
