@@ -75,20 +75,6 @@ def sentence_to_index_matrix(X, word2vec_model, paddingsize):
     return np.array(pad_sequences(np.array(index_mat), maxlen=paddingsize))
 
 
-def testing(X_test, word2vec_model, paddingsize, RNN_model_path, output_path):
-    X_test_mat = sentence_to_index_matrix(X_test, word2vec_model, paddingsize)
-    predictor = load_model(os.path.abspath(RNN_model_path))
-
-    y_test_proba = predictor.predict(X_test_mat, verbose=1, batch_size=1024).squeeze()
-    y = y_test_proba*4.0
-
-    with open(os.path.abspath(output_path), 'w+') as f:
-        f.write('ID,Sentiment\n')
-        for ind, sent in enumerate(y):
-            f.write(str(ind) + ',' + str(sent) + '\n')
-        f.close()
-
-
 def main():
     test_df = pd.read_csv('test.csv', sep=',')
     X_test = test_df['text']
@@ -98,7 +84,17 @@ def main():
     output_path = RNN_model_path + '.csv'
     sentence_max_len = 150
 
-    testing(X_test, word2vec_model, sentence_max_len, RNN_model_path, output_path)
+    X_test_mat = sentence_to_index_matrix(X_test, word2vec_model, sentence_max_len)
+    predictor = load_model(os.path.abspath(RNN_model_path))
+
+    y_test_proba = predictor.predict(X_test_mat, verbose=1, batch_size=1024).squeeze()
+    y = y_test_proba * 4.0
+
+    with open(os.path.abspath(output_path), 'w+') as f:
+        f.write('ID,Sentiment\n')
+        for ind, sent in enumerate(y):
+            f.write(str(ind) + ',' + str(sent) + '\n')
+        f.close()
 
 
 if __name__ == '__main__':

@@ -73,7 +73,7 @@ def text_to_txt_file(X, X_test, txt_path='text_preprocessing.txt'):
     ans = []
     for sentence in X:
         sentence = re.sub(r'http\S+', '', sentence)     # Remove url in the sentence
-        sentence = re.sub(r'[\?\.\!\,]+(?=[\?\.\!\,])', '', sentence)       # Remove duplication of '?', '.', '!', ','
+        sentence = re.sub(r'[\.\,]+(?=[\.\,])', '', sentence)  # Remove duplication of '.', ','
 
         # Remove triple dot, message waiting
         sentence = sentence.replace('\x85', ' ').replace('\x95', ' ').replace('\x99', ' ').replace('\xa0', ' ')
@@ -126,7 +126,7 @@ def input_tokenize(X):
     matrix = []
     for sentence in X:
         sentence = re.sub(r'http\S+', '', sentence)     # Remove url in the sentence
-        sentence = re.sub(r'[\?\.\!\,]+(?=[\?\.\!\,])', '', sentence)       # Remove duplication of '?', '.', '!', ','
+        sentence = re.sub(r'[\.\,]+(?=[\.\,])', '', sentence)       # Remove duplication of '.', ','
 
         # Remove triple dot, message waiting
         sentence = sentence.replace('\x85', ' ').replace('\x95', ' ').replace('\x99', ' ').replace('\xa0', ' ')
@@ -177,7 +177,7 @@ def input_tokenize(X):
 def word2vec_training(preprocessing_path, max_length, model_path='word2vec_' + timestamp + '.model'):
     preprocessing_path = os.path.abspath(preprocessing_path)
     sentences = word2vec.LineSentence(preprocessing_path)
-    model = word2vec.Word2Vec(sentences, size=max_length, sg=1, min_count=1)
+    model = word2vec.Word2Vec(sentences, size=max_length, sg=0, min_count=1, window=10)
     model.save(model_path)
     return model
 
@@ -215,18 +215,18 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
 
     # RNN #
     hid_size = 256
-    RNN_output = LSTM(hid_size, return_sequences=True, dropout=0.5)(embed_in)
-    RNN_output = GRU(hid_size, return_sequences=True, dropout=0.5)(RNN_output)
+    RNN_output = LSTM(hid_size, return_sequences=True, dropout=0.5, activation='hard_sigmoid')(embed_in)
+    RNN_output = GRU(hid_size, return_sequences=True, dropout=0.5, activation='hard_sigmoid')(RNN_output)
 
     # DNN #
     outputs = Flatten()(RNN_output)
-    outputs = Dense(256, activation='relu')(outputs)
+    outputs = Dense(256, activation='LeakyReLU')(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
-    outputs = Dense(256, activation='relu')(outputs)
+    outputs = Dense(256, activation='LeakyReLU')(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
-    outputs = Dense(128, activation='relu')(outputs)
+    outputs = Dense(128, activation='LeakyReLU')(outputs)
     outputs = BatchNormalization()(outputs)
     outputs = Dropout(0.5)(outputs)
     outputs = Dense(1, activation='sigmoid')(outputs)
@@ -261,8 +261,8 @@ X_test = test_df['text']
 Y = input_df['sentiment']/4.0
 
 # Parameters #
-word_vec_size = 128
-sentence_max_len = 150
+word_vec_size = 200
+sentence_max_len = 200
 verbose = 1
 
 # text_to_txt_file(X, X_test)
@@ -278,13 +278,13 @@ X_train, X_val, y_train, y_val = train_test_split(X_index, Y.values, test_size=0
 
 # Training Parameters #
 num_epo = 10000
-batch_size = 1024
+batch_size = 3072
 patience = 4
 
 # Training #
 if not os.path.exists('./logs/'+timestamp):
     os.makedirs('./logs/'+timestamp)
-model_names = './logs/' + timestamp + '/model_' + timestamp + '_{epoch:02d}_{val_loss:.2f}.hdf5'
+model_names = './logs/' + timestamp + '/model_' + timestamp + '_{epoch:02d}_{val_loss:.6f}.hdf5'
 
 hist = LossHistory()
 early_stop = EarlyStopping(monitor='val_loss', patience=patience, verbose=1)
