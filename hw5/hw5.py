@@ -177,7 +177,7 @@ def input_tokenize(X):
 def word2vec_training(preprocessing_path, max_length, model_path='word2vec_' + timestamp + '.model'):
     preprocessing_path = os.path.abspath(preprocessing_path)
     sentences = word2vec.LineSentence(preprocessing_path)
-    model = word2vec.Word2Vec(sentences, size=max_length, sg=0, min_count=1, window=10)
+    model = word2vec.Word2Vec(sentences, size=max_length, sg=1, min_count=1, window=10)
     model.save(model_path)
     return model
 
@@ -214,29 +214,29 @@ def RNN(maxlen, num_words, wordvec_dim, word2vec_model):
                          trainable=False)(inputs)
 
     # RNN #
-    hid_size = 256
-    RNN_output = LSTM(hid_size, return_sequences=True, dropout=0.5, activation='hard_sigmoid')(embed_in)
-    RNN_output = GRU(hid_size, return_sequences=True, dropout=0.5, activation='hard_sigmoid')(RNN_output)
+    hid_size = 384
+    RNN_output = LSTM(hid_size, dropout=0.25, recurrent_dropout=0.25, return_sequences=True, go_backwards=True, activation='hard_sigmoid')(embed_in)
+    RNN_output = GRU(hid_size, dropout=0.25, recurrent_dropout=0.25, return_sequences=False, activation='hard_sigmoid')(RNN_output)
 
     # DNN #
-    outputs = Flatten()(RNN_output)
-    outputs = Dense(256)(outputs)
-    outputs = LeakyReLU()(outputs)
-    outputs = BatchNormalization()(outputs)
-    outputs = Dropout(0.5)(outputs)
-    outputs = Dense(256)(outputs)
-    outputs = LeakyReLU()(outputs)
-    outputs = BatchNormalization()(outputs)
-    outputs = Dropout(0.5)(outputs)
-    outputs = Dense(128)(outputs)
-    outputs = LeakyReLU()(outputs)
-    outputs = BatchNormalization()(outputs)
-    outputs = Dropout(0.5)(outputs)
-    outputs = Dense(1, activation='sigmoid')(outputs)
+#    outputs = Flatten()(RNN_output)
+#    outputs = Dense(256)(outputs)
+#    outputs = LeakyReLU()(outputs)
+#    outputs = BatchNormalization()(outputs)
+#    outputs = Dropout(0.3)(outputs)
+#    outputs = Dense(256)(outputs)
+#    outputs = LeakyReLU()(outputs)
+#    outputs = BatchNormalization()(outputs)
+#    outputs = Dropout(0.3)(outputs)
+#    outputs = Dense(128)(outputs)
+#    outputs = LeakyReLU()(outputs)
+#    outputs = BatchNormalization()(outputs)
+#    outputs = Dropout(0.3)(outputs)
+    outputs = Dense(1, activation='hard_sigmoid')(RNN_output)
 
     model = Model(inputs=inputs, outputs=outputs)
 
-    optimizer = Adadelta()
+    optimizer = Adam(0.003)
     model.compile(optimizer=optimizer, loss='mean_squared_error')
     print('model compiled')
     return model
@@ -265,13 +265,13 @@ Y = input_df['sentiment']/4.0
 
 # Parameters #
 word_vec_size = 200
-sentence_max_len = 200
+sentence_max_len = 100
 verbose = 1
 
 #text_to_txt_file(X, X_test)
 #word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
 #                                   max_length=word_vec_size)
-word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.25_22.25.model')
+word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.26_16.21.model')
 num_words = len(word2vec_model.wv.vocab)
 print('number of words = %d' % num_words)
 X_index = sentence_to_index_matrix(X, word2vec_model, sentence_max_len)
@@ -281,8 +281,8 @@ X_train, X_val, y_train, y_val = train_test_split(X_index, Y.values, test_size=0
 
 # Training Parameters #
 num_epo = 10000
-batch_size = 3072
-patience = 4
+batch_size = 256
+patience = 6
 
 # Training #
 if not os.path.exists('./logs/'+timestamp):
@@ -292,10 +292,11 @@ model_names = './logs/' + timestamp + '/model_' + timestamp + '_{epoch:02d}_{val
 hist = LossHistory()
 early_stop = EarlyStopping(monitor='val_loss', patience=patience, verbose=1)
 model_checkpoint = ModelCheckpoint(model_names, monitor='val_loss', save_best_only=True, verbose=1)
-# reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.75, patience=8, verbose=1)
-call_back = [hist, early_stop, model_checkpoint]
+reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
+call_back = [hist, early_stop, model_checkpoint, reduce_lr]
 
 RNN_model = RNN(sentence_max_len, num_words, word_vec_size, word2vec_model)
+#RNN_model = load_model('./logs/2018.12.26_18.39/model_2018.12.26_18.39_28_0.107274.hdf5')
 RNN_model.summary()
 RNN_model.fit(X_train, y_train,
               batch_size=batch_size,
