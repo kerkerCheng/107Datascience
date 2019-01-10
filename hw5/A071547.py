@@ -268,10 +268,10 @@ word_vec_size = 200
 sentence_max_len = 100
 verbose = 1
 
-#text_to_txt_file(X, X_test)
-#word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
-#                                   max_length=word_vec_size)
-word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.26_16.21.model')
+text_to_txt_file(X, X_test)
+word2vec_model = word2vec_training(preprocessing_path='text_preprocessing.txt',
+                                   max_length=word_vec_size)
+#word2vec_model = word2vec.Word2Vec.load('word2vec_2018.12.26_16.21.model')
 num_words = len(word2vec_model.wv.vocab)
 print('number of words = %d' % num_words)
 X_index = sentence_to_index_matrix(X, word2vec_model, sentence_max_len)
@@ -285,18 +285,14 @@ batch_size = 256
 patience = 6
 
 # Training #
-if not os.path.exists('./logs/'+timestamp):
-    os.makedirs('./logs/'+timestamp)
-model_names = './logs/' + timestamp + '/model_' + timestamp + '_{epoch:02d}_{val_loss:.6f}.hdf5'
+model_names = 'A071547.hdf5'
 
-hist = LossHistory()
 early_stop = EarlyStopping(monitor='val_loss', patience=patience, verbose=1)
 model_checkpoint = ModelCheckpoint(model_names, monitor='val_loss', save_best_only=True, verbose=1)
 reduce_lr = ReduceLROnPlateau(monitor='val_loss', factor=0.5, patience=3, verbose=1)
-call_back = [hist, early_stop, model_checkpoint, reduce_lr]
+call_back = [early_stop, model_checkpoint, reduce_lr]
 
 RNN_model = RNN(sentence_max_len, num_words, word_vec_size, word2vec_model)
-#RNN_model = load_model('./logs/2018.12.26_18.39/model_2018.12.26_18.39_28_0.107274.hdf5')
 RNN_model.summary()
 RNN_model.fit(X_train, y_train,
               batch_size=batch_size,
@@ -304,8 +300,17 @@ RNN_model.fit(X_train, y_train,
               epochs=num_epo,
               callbacks=call_back,
               verbose=1)
-RNN_model.save(timestamp + '_last.hdf5')
-output_history(hist, timestamp)
-plot_acc(hist)
 
-# testing(X_test, word2vec_model, sentence_max_len, model_names, 'answer.csv')
+# Testing #
+output_path = 'answer.csv'
+X_test_mat = sentence_to_index_matrix(X_test, word2vec_model, sentence_max_len)
+predictor = load_model(os.path.abspath(model_names))
+
+y_test_proba = predictor.predict(X_test_mat, verbose=1, batch_size=4096).squeeze()
+y = y_test_proba*4.0
+
+with open(os.path.abspath(output_path), 'w+') as f:
+    f.write('ID,Sentiment\n')
+    for ind, sent in enumerate(y):
+        f.write(str(ind) + ',' + str(sent) + '\n')
+    f.close()
