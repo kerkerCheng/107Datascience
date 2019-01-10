@@ -37,8 +37,8 @@ for index, row in shooter_df.iterrows():
     offense_strength = []
     this_arr = this_df.values
     for index_this, row_this in this_df.iterrows():
-        score_ef.append(row_this['PTS']/(row_this['TOUCH_TIME']+row_this['DRIBBLES']))
-        offense_strength.append(row_this['FGM']*row_this['SHOT_DIST']/(row_this['CLOSE_DEF_DIST'])**0.5)
+        score_ef.append(row_this['PTS']/((row_this['TOUCH_TIME']+row_this['DRIBBLES'])**0.5))
+        offense_strength.append(row_this['FGM']*0.3*row_this['SHOT_DIST']/(row_this['CLOSE_DEF_DIST']))
 
     shooter_df.loc[index, 'score_ef'] = sum(score_ef)/float(len(score_ef))
     shooter_df.loc[index, 'offense_strength'] = sum(offense_strength)/float(len(offense_strength))
@@ -49,10 +49,10 @@ shooter_df['sco_ranking'] = shooter_df['score_ef'].rank(ascending=False).astype(
 shooter_df['off_ranking'] = shooter_df['offense_strength'].rank(ascending=False).astype(int)
 
 for index, row in shooter_df.iterrows():
-    shooter_df.loc[index, 'ALL_RANK_SCORE'] = 1.0*row['FG_ranking'] + \
+    shooter_df.loc[index, 'ALL_RANK_SCORE'] = 0.75*row['FG_ranking'] + \
                                               1.0*row['GC_ranking'] + \
-                                              1.0*row['sco_ranking'] + \
-                                              1.0*row['off_ranking']
+                                              2.0*row['sco_ranking'] + \
+                                              2.0*row['off_ranking']
 
 shooter_df['ALL_RANK'] = shooter_df['ALL_RANK_SCORE'].rank().astype(int)
 result = shooter_df[['player_name', 'player_id', 'ALL_RANK']].sort_values(by=['ALL_RANK'])
