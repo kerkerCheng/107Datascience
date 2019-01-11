@@ -16,6 +16,16 @@ df.loc[df['TOUCH_TIME'] <= 0, 'TOUCH_TIME'] = 0.01
 df.loc[df['SHOT_DIST'] < 0, 'SHOT_DIST'] = 0.01
 df.loc[df['CLOSE_DEF_DIST'] <= 0, 'CLOSE_DEF_DIST'] = 0.01
 
+df['TOUCH_TIME'] = (df['TOUCH_TIME']-df['TOUCH_TIME'].min())/(df['TOUCH_TIME'].max()-df['TOUCH_TIME'].min())
+df['CLOSE_DEF_DIST'] = \
+    (df['CLOSE_DEF_DIST']-df['CLOSE_DEF_DIST'].min())/(df['CLOSE_DEF_DIST'].max()-df['CLOSE_DEF_DIST'].min())
+
+df.loc[df['PTS'] < 0, 'PTS'] = 0
+df.loc[df['DRIBBLES'] < 0, 'DRIBBLES'] = 0
+df.loc[df['TOUCH_TIME'] <= 0, 'TOUCH_TIME'] = 0.01
+df.loc[df['SHOT_DIST'] < 0, 'SHOT_DIST'] = 0.01
+df.loc[df['CLOSE_DEF_DIST'] <= 0, 'CLOSE_DEF_DIST'] = 0.01
+
 shooter_df = df[['player_name', 'player_id']]
 defender_df = df[['CLOSEST_DEFENDER', 'CLOSEST_DEFENDER_PLAYER_ID']]
 shooter_df = shooter_df.drop_duplicates()
@@ -32,27 +42,33 @@ for index, row in shooter_df.iterrows():
     fg_count = this_df[this_df['FGM'] == 1].shape[0]
     shooter_df.loc[index, 'FG%'] = fg_count/this_df.shape[0]
     shooter_df.loc[index, 'Game_count'] = shooter_ngame.loc[[row['player_id']]].values[0][0]
+    shooter_df.loc[index, 'Score_avg'] = this_df['PTS'].sum()/shooter_ngame.loc[[row['player_id']]].values[0][0]
 
     score_ef = []
     offense_strength = []
     this_arr = this_df.values
     for index_this, row_this in this_df.iterrows():
-        score_ef.append(row_this['PTS']/((row_this['TOUCH_TIME']+row_this['DRIBBLES'])**0.5))
-        offense_strength.append(row_this['FGM']*0.3*row_this['SHOT_DIST']/(row_this['CLOSE_DEF_DIST']))
+        score_ef.append(row_this['PTS']/((row_this['TOUCH_TIME'])**0.2))
+        offense_strength.append(row_this['FGM']/(row_this['CLOSE_DEF_DIST']))
 
-    shooter_df.loc[index, 'score_ef'] = sum(score_ef)/float(len(score_ef))
-    shooter_df.loc[index, 'offense_strength'] = sum(offense_strength)/float(len(offense_strength))
+    score_ef = np.array(score_ef)
+    offense_strength = np.array(offense_strength)
+    shooter_df.loc[index, 'score_ef'] = score_ef[score_ef != 0].mean()
+    shooter_df.loc[index, 'offense_strength'] = offense_strength[offense_strength != 0].mean()
 
 shooter_df['FG_ranking'] = shooter_df['FG%'].rank(ascending=False).astype(int)
-shooter_df['GC_ranking'] = shooter_df['Game_count'].rank(ascending=False).astype(int)
+shooter_df['ScoAvg_ranking'] = shooter_df['Score_avg'].rank(ascending=False).astype(int)
 shooter_df['sco_ranking'] = shooter_df['score_ef'].rank(ascending=False).astype(int)
 shooter_df['off_ranking'] = shooter_df['offense_strength'].rank(ascending=False).astype(int)
 
 for index, row in shooter_df.iterrows():
-    shooter_df.loc[index, 'ALL_RANK_SCORE'] = 0.75*row['FG_ranking'] + \
-                                              1.0*row['GC_ranking'] + \
-                                              2.0*row['sco_ranking'] + \
-                                              2.0*row['off_ranking']
+    shooter_df.loc[index, 'ALL_RANK_SCORE'] = 1.0*row['FG_ranking'] + \
+                                              1.0*row['ScoAvg_ranking'] + \
+                                              5.0*row['sco_ranking'] + \
+                                              5.0*row['off_ranking']
 
 shooter_df['ALL_RANK'] = shooter_df['ALL_RANK_SCORE'].rank().astype(int)
 result = shooter_df[['player_name', 'player_id', 'ALL_RANK']].sort_values(by=['ALL_RANK'])
+shooter_df = shooter_df.sort_values(by=['ALL_RANK'])
+shooter_df.to_csv('result.csv')
+result.to_csv('ranking.csv')
