@@ -41,7 +41,7 @@ for index, row in shooter_df.iterrows():
     this_df = df.loc[(df['player_id'] == row['player_id'])]
     fg_count = this_df[this_df['FGM'] == 1].shape[0]
     shooter_df.loc[index, 'FG%'] = fg_count/this_df.shape[0]
-    shooter_df.loc[index, 'Game_count'] = shooter_ngame.loc[[row['player_id']]].values[0][0]
+    # shooter_df.loc[index, 'Game_count'] = shooter_ngame.loc[[row['player_id']]].values[0][0]
     shooter_df.loc[index, 'Score_avg'] = this_df['PTS'].sum()/shooter_ngame.loc[[row['player_id']]].values[0][0]
 
     score_ef = []
@@ -64,8 +64,8 @@ shooter_df['off_ranking'] = shooter_df['offense_strength'].rank(ascending=False)
 for index, row in shooter_df.iterrows():
     shooter_df.loc[index, 'ALL_RANK_SCORE'] = 1.0*row['FG_ranking'] + \
                                               1.0*row['ScoAvg_ranking'] + \
-                                              5.0*row['sco_ranking'] + \
-                                              5.0*row['off_ranking']
+                                              10.0*row['sco_ranking'] + \
+                                              3.0*row['off_ranking']
 
 shooter_df['ALL_RANK'] = shooter_df['ALL_RANK_SCORE'].rank().astype(int)
 result = shooter_df[['player_name', 'player_id', 'ALL_RANK']].sort_values(by=['ALL_RANK'])

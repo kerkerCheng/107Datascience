@@ -35,7 +35,7 @@ for player in player_list:
         r = requests.get(url, stream=True)
 
     if r.status_code == 200:
-        print("http request completed, URL=" + url)
+        # print("http request completed, URL=" + url)
         content = r.text
         soup = BeautifulSoup(content, 'html.parser')
 
@@ -50,7 +50,7 @@ for player in player_list:
                 r_new = requests.get(url_new, stream=True)
 
             if r_new.status_code == 200:
-                print("http request completed, URL=" + url_new)
+                # print("http request completed, URL=" + url_new)
                 content = r_new.text
                 soup = BeautifulSoup(content, 'html.parser')
                 ans_parts = soup.find('div', {'class': 'players', 'id': 'info'}).find_all('strong')
@@ -58,6 +58,7 @@ for player in player_list:
                     if "Position:" in i.text:
                         tu = (player,
                               i.next_sibling.replace('\n', '').replace(' and ', ',').replace(' ', '').replace('▪', ''))
+                        print(tu[0] + ": " + tu[1])
                         ans_list.append(tu)
 
         else:
@@ -65,5 +66,6 @@ for player in player_list:
             for i in ans_parts:
                 if "Position:" in i.text:
                     tu = (player, i.next_sibling.replace('\n', '').replace(' and ', ',').replace(' ', '').replace('▪', ''))
+                    print(tu[0] + ": " + tu[1])
                     ans_list.append(tu)
 
