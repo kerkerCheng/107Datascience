@@ -65,6 +65,6 @@ for i in range(1, n+1):
             bin[du] += 1
             deg[u] -= 1
 
-with open(os.path.abspath(outputfile), 'w+', encoding='utf-8') as f:
+with open(os.path.abspath(outputfile), 'w+') as f:
     for v in np.where(deg == np.max(deg))[0]:
         f.write(str(v-1) + '\n')
